@@ -11,7 +11,6 @@ Usage:
 Examples:
     python migaku_switch_language.py Japanese
     python migaku_switch_language.py German
-    python migaku_switch_language.py  # defaults to Japanese
 
 Available languages:
     Cantonese, English, French, German, Italian, Japanese,
@@ -94,6 +93,7 @@ def switch_language(target_language: str = DEFAULT_TARGET_LANGUAGE):
         options.add_argument("--no-first-run")
         options.add_argument("--no-default-browser-check")
         options.add_argument("--headless=new")
+        options.add_argument("--disable-gpu")
 
         driver = webdriver.Chrome(options=options)
         wait = WebDriverWait(driver, 15)
@@ -125,7 +125,10 @@ def switch_language(target_language: str = DEFAULT_TARGET_LANGUAGE):
 
     finally:
         if driver:
-            driver.quit()
+            try:
+                driver.quit()
+            except:
+                pass
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 

@@ -8,6 +8,7 @@ package-mode = false
 python = "^3.14"
 playwright = "^1.40.0"
 selenium = "^4.40.0"
+webdriver-manager = "^4.0.2"
 
 [build-system]
 requires = ["poetry-core"]
