@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 7: Make the Migaku Chrome window fullscreen."""
+"""Step 5: Make the Migaku Chrome window fullscreen."""
 
 import sys
 from pathlib import Path
