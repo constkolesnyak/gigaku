@@ -23,7 +23,7 @@ poetry run python -m steps.<name> # Individual step (e.g. steps.01_wait_samsung)
 3. `03_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
 4. `04_open_ci` — reads CI bookmark, opens in new Chrome window, returns window ID
 5. `05_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
-6. `06_switch_language` — Selenium: copies Chrome profile, headless Chrome, clicks Migaku UI
+6. `06_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
 7. `07_fullscreen_migaku` — fullscreens Migaku window by ID
 8. `08_fullscreen_ci` — fullscreens CI window by ID
 
@@ -40,10 +40,10 @@ poetry run python -m steps.<name> # Individual step (e.g. steps.01_wait_samsung)
 
 - `AppleScriptError` (`.error_number`) — error -600 (app not running) silently ignored in close step
 - `BookmarkError` — CI folder missing, empty, or wrong count
-- `LanguageSwitchError` — wraps Selenium failures, always cleans up temp dir + driver
+- `LanguageSwitchError` — wraps AppleScript/JS failures in language switch
 
 ## Dependencies
 
 - `pyobjc-framework-quartz` — provides `Foundation`, `Quartz.CoreGraphics`
-- `selenium` + `webdriver-manager` — headless Chrome for Migaku language switch
+- Chrome "Allow JavaScript from Apple Events" must be enabled (View > Developer)
 - Python ^3.14, managed by Poetry
