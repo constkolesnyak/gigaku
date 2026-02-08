@@ -1,49 +1,31 @@
-#!/usr/bin/env python3
-"""
-Migaku Extension Language Switcher
+"""Step 6: Switch Migaku extension language via Selenium."""
 
-Automates switching the learning language in the Migaku Chrome extension.
-Uses Selenium with a copy of your Chrome profile so you don't need to close Chrome.
-
-Usage:
-    python migaku_switch_language.py [language]
-
-Examples:
-    python migaku_switch_language.py Japanese
-    python migaku_switch_language.py German
-
-Available languages:
-    Cantonese, English, French, German, Italian, Japanese,
-    Korean, Mandarin, Portuguese, Spanish, Vietnamese
-"""
+import glob
+import os
+import shutil
+import sys
+import tempfile
+import time
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import os
-import shutil
-import tempfile
-import glob
-import time
-import sys
+from selenium.webdriver.support.ui import WebDriverWait
 
-# Configuration
-MIGAKU_EXTENSION_ID = "dmeppfcidcpcocleneopiblmpnbokhep"
-DEFAULT_TARGET_LANGUAGE = "Japanese"
-
-# Chrome paths - adjust if using a different profile
-CHROME_USER_DATA = os.path.expanduser("~/Library/Application Support/Google/Chrome")
-CHROME_PROFILE = "Profile 1"
-
-AVAILABLE_LANGUAGES = [
-    "Cantonese", "English", "French", "German", "Italian",
-    "Japanese", "Korean", "Mandarin", "Portuguese", "Spanish", "Vietnamese"
-]
+from lib.config import (
+    AVAILABLE_LANGUAGES,
+    CHROME_PROFILE,
+    CHROME_USER_DATA,
+    MIGAKU_EXTENSION_ID,
+)
 
 
-def get_extension_path() -> str:
+class LanguageSwitchError(Exception):
+    """Raised when the Selenium language switch fails."""
+
+
+def _get_extension_path() -> str:
     ext_base = os.path.join(CHROME_USER_DATA, CHROME_PROFILE, "Extensions", MIGAKU_EXTENSION_ID)
     versions = glob.glob(os.path.join(ext_base, "*"))
     if not versions:
@@ -51,7 +33,7 @@ def get_extension_path() -> str:
     return sorted(versions)[-1]
 
 
-def copy_profile_data(temp_dir: str) -> str:
+def _copy_profile_data(temp_dir: str) -> str:
     source_profile = os.path.join(CHROME_USER_DATA, CHROME_PROFILE)
     dest_profile = os.path.join(temp_dir, "Profile")
     os.makedirs(dest_profile, exist_ok=True)
@@ -72,19 +54,20 @@ def copy_profile_data(temp_dir: str) -> str:
     return dest_profile
 
 
-def switch_language(target_language: str = DEFAULT_TARGET_LANGUAGE):
-    if target_language not in AVAILABLE_LANGUAGES:
-        print(f"Error: '{target_language}' is not available.")
-        print(f"Choose from: {', '.join(AVAILABLE_LANGUAGES)}")
-        return False
+def run(language: str = "German") -> None:
+    """Switch Migaku to the given language. Raises LanguageSwitchError on failure."""
+    if language not in AVAILABLE_LANGUAGES:
+        raise LanguageSwitchError(
+            f"'{language}' is not available. Choose from: {', '.join(AVAILABLE_LANGUAGES)}"
+        )
 
-    ext_path = get_extension_path()
+    ext_path = _get_extension_path()
     temp_dir = tempfile.mkdtemp(prefix="migaku_")
     driver = None
 
     try:
         print("Setting up...")
-        copy_profile_data(temp_dir)
+        _copy_profile_data(temp_dir)
 
         options = Options()
         options.add_argument(f"--user-data-dir={temp_dir}")
@@ -98,40 +81,35 @@ def switch_language(target_language: str = DEFAULT_TARGET_LANGUAGE):
         driver = webdriver.Chrome(options=options)
         wait = WebDriverWait(driver, 15)
 
-        # Open extension window
         app_url = f"chrome-extension://{MIGAKU_EXTENSION_ID}/pages/app-window/index.html"
         driver.get(app_url)
         time.sleep(3)
 
-        # Click language selector
         lang_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".LangSelectButton")))
         lang_btn.click()
         time.sleep(2)
 
-        # Select language
-        print(f"Switching to {target_language}...")
+        print(f"Switching to {language}...")
         lang_option = wait.until(
-            EC.element_to_be_clickable((By.XPATH, f"//button[.//p[text()='{target_language}']]"))
+            EC.element_to_be_clickable((By.XPATH, f"//button[.//p[text()='{language}']]"))
         )
         lang_option.click()
         time.sleep(5)
 
-        print(f"✓ Switched to {target_language}")
-        return True
+        print(f"Switched to {language}")
 
     except Exception as e:
-        print(f"Error: {e}")
-        return False
+        raise LanguageSwitchError(str(e)) from e
 
     finally:
         if driver:
             try:
                 driver.quit()
-            except:
+            except Exception:
                 pass
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_TARGET_LANGUAGE
-    switch_language(target)
+    target = sys.argv[1] if len(sys.argv) > 1 else "German"
+    run(target)

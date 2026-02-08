@@ -1,0 +1,49 @@
+# Gigaku
+
+macOS automation that sets up a Samsung TV display with Chrome windows for CI and Migaku language learning.
+
+## Run
+
+```bash
+poetry run python main.py        # Full workflow
+poetry run python -m steps.<name> # Individual step (e.g. steps.01_wait_samsung)
+```
+
+## Architecture
+
+**`lib/`** — shared modules, no subprocess anywhere:
+- `config.py` — all constants (paths, IDs, vendor codes, timing)
+- `applescript.py` — `Foundation.NSAppleScript` wrapper (`run()`, `run_int()`, `AppleScriptError`)
+- `display.py` — `CoreGraphics` display detection (`DisplayInfo` dataclass, `list_displays()`, `find_samsung_display()`)
+- `chrome.py` — bookmarks JSON reading, window open/close/fullscreen via AppleScript (`BookmarkError`)
+
+**`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
+1. `01_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
+2. `02_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
+3. `03_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
+4. `04_open_ci` — reads CI bookmark, opens in new Chrome window, returns window ID
+5. `05_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
+6. `06_switch_language` — Selenium: copies Chrome profile, headless Chrome, clicks Migaku UI
+7. `07_fullscreen_migaku` — fullscreens Migaku window by ID
+8. `08_fullscreen_ci` — fullscreens CI window by ID
+
+**`main.py`** — orchestrator calling steps in order. No try/except — errors propagate with full tracebacks.
+
+## Key Design Decisions
+
+- **No subprocess**: `osascript` replaced by `NSAppleScript` (`lib/applescript.py`), `system_profiler` replaced by `CoreGraphics` APIs (`lib/display.py`)
+- **Real display coordinates**: `DisplayInfo` from CoreGraphics replaces hardcoded `MAIN_DISPLAY_WIDTH = 2560`
+- **Single CI bookmark enforced**: `get_ci_bookmark_url()` raises `BookmarkError` if CI folder has != 1 bookmark
+- **Samsung vendor IDs**: EDID codes `0x4C2D` ("SAM") and `0x4CA3` ("SEC") in `SAMSUNG_VENDOR_IDS`. If a new Samsung TV reports a different code, step 1 prints all detected displays so the user can add the ID to `config.py`
+
+## Error Types
+
+- `AppleScriptError` (`.error_number`) — error -600 (app not running) silently ignored in close step
+- `BookmarkError` — CI folder missing, empty, or wrong count
+- `LanguageSwitchError` — wraps Selenium failures, always cleans up temp dir + driver
+
+## Dependencies
+
+- `pyobjc-framework-quartz` — provides `Foundation`, `Quartz.CoreGraphics`
+- `selenium` + `webdriver-manager` — headless Chrome for Migaku language switch
+- Python ^3.14, managed by Poetry
