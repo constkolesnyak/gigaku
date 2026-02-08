@@ -91,23 +91,25 @@ end tell'''
 
 
 def make_window_fullscreen(window_id: int) -> None:
-    """Bring a Chrome window to front and toggle fullscreen."""
+    """Make a specific Chrome window fullscreen by ID."""
     source = f'''\
+set windowTitle to ""
 tell application "Google Chrome"
     repeat with w in windows
-        if id of w is {window_id} then
-            set index of w to 1
+        if (id of w as text) = "{window_id}" then
+            set windowTitle to name of w
             exit repeat
         end if
     end repeat
+    activate
 end tell
 
-delay 0.3
+delay 0.5
 
 tell application "System Events"
     tell process "Google Chrome"
-        set frontmost to true
-        delay 0.3
+        click menu item windowTitle of menu "Window" of menu bar 1
+        delay 0.5
         keystroke "f" using {{control down, command down}}
     end tell
 end tell'''
