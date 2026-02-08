@@ -90,8 +90,11 @@ end tell'''
     return applescript.run_int(source)
 
 
-def make_window_fullscreen(window_id: int) -> None:
-    """Make a specific Chrome window fullscreen by ID."""
+def make_window_fullscreen(window_id: int) -> bool:
+    """Make a specific Chrome window fullscreen by ID.
+
+    Returns True if fullscreen was toggled, False if already fullscreen.
+    """
     source = f'''\
 set windowTitle to ""
 tell application "Google Chrome"
@@ -110,7 +113,12 @@ tell application "System Events"
     tell process "Google Chrome"
         click menu item windowTitle of menu "Window" of menu bar 1
         delay 0.5
+        if value of attribute "AXFullScreen" of front window then
+            return "already"
+        end if
         keystroke "f" using {{control down, command down}}
     end tell
-end tell'''
-    applescript.run(source)
+end tell
+return "toggled"'''
+    result = applescript.run(source)
+    return result == "toggled"

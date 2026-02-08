@@ -23,15 +23,20 @@ tell application "Google Chrome"
         end repeat
     end repeat
 end tell'''
-    return applescript.run_int(source)
+    result = applescript.run(source)
+    if result is None:
+        raise RuntimeError("No Chrome window found with Migaku extension")
+    return int(result)
 
 
 def run(window_id: int | None = None) -> None:
     """Find the Migaku window and make it fullscreen."""
     if window_id is None:
         window_id = _find_migaku_window_id()
-    make_window_fullscreen(window_id)
-    print(f"Migaku window {window_id} set to fullscreen")
+    if make_window_fullscreen(window_id):
+        print(f"Migaku window {window_id} set to fullscreen")
+    else:
+        print(f"Migaku window {window_id} already fullscreen")
 
 
 if __name__ == "__main__":
