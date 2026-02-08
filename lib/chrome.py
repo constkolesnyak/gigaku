@@ -50,15 +50,13 @@ def close_windows_on_display(samsung: DisplayInfo) -> None:
     """Close Chrome windows whose left edge is on the Samsung display."""
     source = f'''\
 tell application "Google Chrome"
-    set windowsToClose to {{}}
-    repeat with w in windows
+    set wCount to count of windows
+    repeat with i from wCount to 1 by -1
+        set w to window i
         set b to bounds of w
         if item 1 of b >= {samsung.x} then
-            set end of windowsToClose to w
+            close w
         end if
-    end repeat
-    repeat with w in windowsToClose
-        close w
     end repeat
 end tell'''
     try:
@@ -128,11 +126,16 @@ def make_window_fullscreen(window_id: int) -> bool:
     source = f'''\
 set windowTitle to ""
 tell application "Google Chrome"
-    repeat with w in windows
-        if (id of w as text) = "{window_id}" then
-            set windowTitle to name of w
-            exit repeat
-        end if
+    -- Wait for the tab to finish loading (title stops saying "Loading")
+    repeat 30 times
+        repeat with w in windows
+            if (id of w as text) = "{window_id}" then
+                set windowTitle to name of w
+                exit repeat
+            end if
+        end repeat
+        if windowTitle is not "" and windowTitle does not contain "Loading" then exit repeat
+        delay 1
     end repeat
     activate
 end tell
