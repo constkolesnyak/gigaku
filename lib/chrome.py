@@ -76,18 +76,48 @@ def open_url_in_new_window(url: str, samsung: DisplayInfo) -> int:
     y1 = samsung.y + 100
     x2 = samsung.x + samsung.width - 100
     y2 = samsung.y + samsung.height - 100
-    source = f'''\
+
+    # Create window and load URL
+    window_id = applescript.run_int(f'''\
 tell application "Google Chrome"
     activate
     delay 0.5
     set newWindow to make new window
-    set bounds of newWindow to {{{x1}, {y1}, {x2}, {y2}}}
     delay 0.5
     set URL of active tab of newWindow to "{url}"
     delay 1
     return id of newWindow
+end tell''')
+
+    # macOS Sequoia auto-tiles new windows (AXFullScreen=true in tile mode),
+    # which blocks Chrome set bounds from working cross-display.
+    # Fix: exit tile-fullscreen via System Events, then set bounds.
+    applescript.run(f'''\
+tell application "Google Chrome" to activate
+delay 0.3
+tell application "System Events"
+    tell process "Google Chrome"
+        repeat with w in windows
+            if subrole of w is "AXStandardWindow" then
+                if value of attribute "AXFullScreen" of w then
+                    set value of attribute "AXFullScreen" of w to false
+                end if
+                exit repeat
+            end if
+        end repeat
+    end tell
+end tell
+delay 1
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set bounds of w to {{{x1}, {y1}, {x2}, {y2}}}
+            exit repeat
+        end if
+    end repeat
 end tell'''
-    return applescript.run_int(source)
+    )
+    return window_id
 
 
 def make_window_fullscreen(window_id: int) -> bool:
