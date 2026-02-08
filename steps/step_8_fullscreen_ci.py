@@ -1,4 +1,10 @@
+#!/usr/bin/env python3
 """Step 8: Make the CI Chrome window fullscreen."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import applescript
 from lib.chrome import make_window_fullscreen

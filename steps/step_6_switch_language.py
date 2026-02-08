@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
 """Step 6: Switch Migaku extension language via AppleScript JS execution."""
 
 import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.applescript import AppleScriptError, run as applescript
 from lib.config import AVAILABLE_LANGUAGES, MIGAKU_EXTENSION_ID

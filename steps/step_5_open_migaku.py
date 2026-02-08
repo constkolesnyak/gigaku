@@ -1,4 +1,10 @@
+#!/usr/bin/env python3
 """Step 5: Open Migaku extension in a new Chrome window on Samsung."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.chrome import open_url_in_new_window
 from lib.config import MIGAKU_APP_URL

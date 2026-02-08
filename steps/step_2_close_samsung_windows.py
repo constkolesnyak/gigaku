@@ -1,4 +1,10 @@
+#!/usr/bin/env python3
 """Step 2: Close any Chrome windows on the Samsung display."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.chrome import close_windows_on_display
 from lib.display import DisplayInfo, find_samsung_display

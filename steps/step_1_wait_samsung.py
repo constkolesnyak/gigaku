@@ -1,6 +1,11 @@
+#!/usr/bin/env python3
 """Step 1: Poll until Samsung TV display is connected."""
 
+import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.config import POLL_INTERVAL
 from lib.display import DisplayInfo, find_samsung_display, list_displays

@@ -1,6 +1,11 @@
+#!/usr/bin/env python3
 """Step 3: Move cursor to Samsung display center and click to focus."""
 
+import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from Quartz.CoreGraphics import (
     CGEventCreateMouseEvent,

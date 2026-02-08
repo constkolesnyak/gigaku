@@ -5,8 +5,8 @@ macOS automation that sets up a Samsung TV display with Chrome windows for CI an
 ## Run
 
 ```bash
-poetry run python main.py        # Full workflow
-poetry run python -m steps.<name> # Individual step (e.g. steps.01_wait_samsung)
+poetry run python main.py              # Full workflow
+poetry run steps/step_7_fullscreen_migaku.py  # Individual step
 ```
 
 ## Architecture
@@ -18,14 +18,14 @@ poetry run python -m steps.<name> # Individual step (e.g. steps.01_wait_samsung)
 - `chrome.py` — bookmarks JSON reading, window open/close/fullscreen via AppleScript (`BookmarkError`)
 
 **`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
-1. `01_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
-2. `02_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
-3. `03_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
-4. `04_open_ci` — reads CI bookmark, opens in new Chrome window, returns window ID
-5. `05_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
-6. `06_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
-7. `07_fullscreen_migaku` — fullscreens Migaku window by ID
-8. `08_fullscreen_ci` — fullscreens CI window by ID
+1. `step_1_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
+2. `step_2_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
+3. `step_3_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
+4. `step_4_open_ci` — reads CI bookmark, opens in new Chrome window, returns window ID
+5. `step_5_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
+6. `step_6_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
+7. `step_7_fullscreen_migaku` — fullscreens Migaku window by ID
+8. `step_8_fullscreen_ci` — fullscreens CI window by ID
 
 **`main.py`** — orchestrator calling steps in order. No try/except — errors propagate with full tracebacks.
 
