@@ -19,8 +19,8 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 
 **`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
 1. `step_1_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
-2. `step_2_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
-3. `step_3_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
+2. `step_2_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
+3. `step_3_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
 4. `step_4_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
 5. `step_5_fullscreen_migaku` — fullscreens Migaku window by ID
 6. `step_6_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
