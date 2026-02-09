@@ -5,14 +5,16 @@ macOS automation that sets up a Samsung TV display with Chrome windows for CI an
 ## Run
 
 ```bash
-poetry run python main.py              # Full workflow
-poetry run steps/step_5_fullscreen_migaku.py  # Individual step
+gigaku jap                                    # Via pipx/poetry install
+poetry run python main.py jap                 # Via poetry run
+poetry run python steps/step_5_fullscreen_migaku.py  # Individual step
 ```
 
 ## Architecture
 
 **`lib/`** — shared modules:
-- `config.py` — all constants (paths, IDs, vendor codes, timing)
+- `cli.py` — CLI entry point (`main()`): parses language arg, runs steps in order, Ctrl+C cleanup (VPN disconnect, close windows, switch TV back to HDMI1)
+- `config.py` — all constants (paths, IDs, vendor codes, timing, `LANG_MAP`)
 - `applescript.py` — `Foundation.NSAppleScript` wrapper (`run()`, `run_int()`, `AppleScriptError`)
 - `display.py` — `CoreGraphics` display detection (`DisplayInfo` dataclass, `list_displays()`, `find_samsung_display()`)
 - `chrome.py` — bookmarks JSON reading, window open/close/fullscreen/keystroke via AppleScript (`BookmarkError`)
@@ -28,9 +30,10 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 5. `step_5_fullscreen_migaku` — fullscreens Migaku window by ID
 6. `step_6_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
 7. `step_7_open_ci` — reads CI bookmark, opens in new Chrome window, and fullscreens it
+- `step_vpn` — connects/disconnects NordVPN via Chrome extension (Japan VPN for `jap`, disconnect on cleanup)
 - `step_pause_media` — pauses media: `KEY_PAUSE` via TV remote if on HDMI1, spacebar to CI Chrome window. Called twice in main: before input switch and after CI opens
 
-**`main.py`** — orchestrator calling steps in order. No try/except — errors propagate with full tracebacks.
+**`main.py`** — thin wrapper delegating to `lib.cli:main`.
 
 ## Key Design Decisions
 
