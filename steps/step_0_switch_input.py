@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Step 0: Switch Samsung TV input to Mac via WebSocket."""
+"""Step 0: Switch Samsung TV input to Mac via UPnP SOAP (fallback: WebSocket)."""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.tv import discover, switch_to_mac
+from lib.tv import discover, get_source_list, switch_to_mac
 
 
 def run() -> None:
@@ -23,5 +23,10 @@ if __name__ == "__main__":
                 print(f"  {ip}")
         else:
             print("No Samsung TVs found on the network.")
+    elif len(sys.argv) > 1 and sys.argv[1] == "sources":
+        sources = get_source_list()
+        print("Available sources:")
+        for name, sid in sorted(sources.items(), key=lambda x: x[1]):
+            print(f"  {name} (ID={sid})")
     else:
         run()

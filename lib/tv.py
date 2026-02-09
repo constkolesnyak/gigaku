@@ -16,8 +16,12 @@ import requests
 import websocket as ws_module
 from Crypto.Cipher import AES
 
+from xml.etree import ElementTree as ET
+
 from lib._rijndael import encrypt as _rijndael_encrypt
-from lib.config import TV_IP, TV_TOKEN_PATH
+from lib.config import (
+    TV_IP, TV_MAC_SOURCE, TV_MAC_SOURCE_ID, TV_TOKEN_PATH, TV_UPNP_CONTROL_PATH, TV_UPNP_PORT,
+)
 
 # --- Crypto constants (from SmartCrypto) ---
 
@@ -333,20 +337,98 @@ def _send_keys(keys, delay=0.7):
         ws.close()
 
 
+# --- UPnP SOAP (direct input switching) ---
+
+_SOAP_URL = f"http://{TV_IP}:{TV_UPNP_PORT}{TV_UPNP_CONTROL_PATH}"
+_SOAP_NS = "urn:samsung.com:service:MainTVAgent2:1"
+
+
+def _soap_request(action: str, args: str = "") -> str:
+    """POST a SOAP envelope to MainTVAgent2. Returns the response body XML."""
+    envelope = (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"'
+        ' s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
+        "<s:Body>"
+        f'<u:{action} xmlns:u="{_SOAP_NS}">'
+        f"{args}"
+        f"</u:{action}>"
+        "</s:Body>"
+        "</s:Envelope>"
+    )
+    headers = {
+        "Content-Type": 'text/xml; charset="utf-8"',
+        "SOAPAction": f'"{_SOAP_NS}#{action}"',
+    }
+    resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=5)
+    resp.raise_for_status()
+    return resp.text
+
+
+def get_current_source() -> str:
+    """Get the TV's current input source (e.g. "HDMI2")."""
+    xml = _soap_request("GetCurrentExternalSource")
+    root = ET.fromstring(xml)
+    # Find CurrentExternalSource in response, ignoring namespaces
+    for el in root.iter():
+        if el.tag.endswith("CurrentExternalSource"):
+            return el.text or ""
+    raise TVError("CurrentExternalSource not found in SOAP response")
+
+
+def get_source_list() -> dict[str, int]:
+    """Get available sources as {name: id} mapping."""
+    xml = _soap_request("GetSourceList")
+    root = ET.fromstring(xml)
+    # The SourceList element contains an inner XML string
+    for el in root.iter():
+        if el.tag.endswith("SourceList"):
+            inner = ET.fromstring(el.text)
+            sources = {}
+            for src in inner.iter("Source"):
+                name_el = src.find("SourceType")
+                id_el = src.find("ID")
+                if name_el is not None and id_el is not None:
+                    sources[name_el.text] = int(id_el.text)
+            return sources
+    raise TVError("SourceList not found in SOAP response")
+
+
+def set_source(name: str, source_id: int) -> None:
+    """Switch TV input directly via SOAP."""
+    args = f"<Source>{name}</Source><ID>{source_id}</ID><UiID>0</UiID>"
+    _soap_request("SetMainTVSource", args)
+
+
 # --- Public API ---
 
 def switch_to_mac() -> None:
-    """Open source menu and navigate to HDMI 2 (Mac's input)."""
+    """Switch TV input to Mac's HDMI port. Uses SOAP, falls back to key sequence."""
     if not TV_IP:
         raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
-    print(f"Switching TV input to Mac ({TV_IP})...")
+
+    # Try direct SOAP switching first
+    try:
+        current = get_current_source()
+        print(f"TV current input: {current}")
+        if current == TV_MAC_SOURCE:
+            print("Already on Mac input, skipping switch.")
+            return
+        print(f"Switching TV input to {TV_MAC_SOURCE} via SOAP...")
+        set_source(TV_MAC_SOURCE, TV_MAC_SOURCE_ID)
+        print(f"TV input switched to {TV_MAC_SOURCE}.")
+        return
+    except Exception as e:
+        print(f"SOAP switching failed ({e}), falling back to key sequence...")
+
+    # Fallback: encrypted WebSocket key sequence
     try:
         _send_keys(["KEY_SOURCE"])
         time.sleep(1)
         _send_keys(["KEY_RIGHT", "KEY_ENTER"])
     except Exception as e:
         raise TVError(f"Failed to switch TV input: {e}") from e
-    print("TV input switched.")
+    print("TV input switched via key sequence.")
 
 
 def discover(timeout: float = 3.0) -> list[str]:

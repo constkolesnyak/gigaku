@@ -31,3 +31,9 @@ AVAILABLE_LANGUAGES = [
 # Samsung TV remote control (encrypted WebSocket, 2014 H-series)
 TV_IP = "192.168.0.77"  # Samsung TV IP — run step_0 with 'discover' to find
 TV_TOKEN_PATH = os.path.join(os.path.dirname(__file__), "..", ".tv_token")
+
+# Samsung TV UPnP SOAP (direct input switching, no menu navigation)
+TV_UPNP_PORT = 7676
+TV_UPNP_CONTROL_PATH = "/smp_23_"  # MainTVAgent2 controlURL from /smp_21_ device desc
+TV_MAC_SOURCE = "HDMI2"
+TV_MAC_SOURCE_ID = 58  # from GetSourceList — 0=TV, 57=HDMI1, 58=HDMI2, 59=HDMI3, etc.

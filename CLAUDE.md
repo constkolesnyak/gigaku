@@ -16,11 +16,11 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 - `applescript.py` — `Foundation.NSAppleScript` wrapper (`run()`, `run_int()`, `AppleScriptError`)
 - `display.py` — `CoreGraphics` display detection (`DisplayInfo` dataclass, `list_displays()`, `find_samsung_display()`)
 - `chrome.py` — bookmarks JSON reading, window open/close/fullscreen via AppleScript (`BookmarkError`)
-- `tv.py` — Samsung TV encrypted WebSocket control (`switch_to_mac()`, `discover()`, `TVError`)
+- `tv.py` — Samsung TV control: UPnP SOAP for direct input switching (`get_current_source()`, `set_source()`, `get_source_list()`), encrypted WebSocket as fallback (`switch_to_mac()`, `discover()`, `TVError`)
 - `_rijndael.py` — reduced-round Rijndael (3 rounds) for Samsung SamyGO key derivation
 
 **`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
-0. `step_0_switch_input` — switches TV input to Mac via encrypted WebSocket (`discover` arg for SSDP discovery)
+0. `step_0_switch_input` — switches TV input to Mac via UPnP SOAP, falls back to encrypted WebSocket (`discover` arg for SSDP, `sources` arg to list available inputs)
 1. `step_1_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
 2. `step_2_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
 3. `step_3_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
@@ -34,7 +34,8 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 ## Key Design Decisions
 
 - **No subprocess**: `osascript` replaced by `NSAppleScript` (`lib/applescript.py`), `system_profiler` replaced by `CoreGraphics` APIs (`lib/display.py`), TV control uses encrypted WebSocket via `pycryptodome` + `websocket-client` (`lib/tv.py`)
-- **Samsung TV protocol**: 2014 H-series uses encrypted Socket.IO on port 8000 with PIN-based pairing on port 8080. Requires reduced-round Rijndael (3 rounds, NOT standard AES) for key derivation. Input switching navigates the source menu (KEY_SOURCE → KEY_RIGHT → KEY_ENTER) since direct KEY_HDMI keys don't work on this model
+- **Samsung TV input switching**: UPnP SOAP on port 7676 (`MainTVAgent2` service) for direct input detection and switching — no menu navigation needed. Falls back to encrypted WebSocket key sequence (`KEY_SOURCE → KEY_RIGHT → KEY_ENTER`) if SOAP is unavailable. SOAP uses IP-based ACL (one-time TV popup), independent of WebSocket pairing
+- **Samsung TV encrypted protocol**: 2014 H-series uses encrypted Socket.IO on port 8000 with PIN-based pairing on port 8080. Requires reduced-round Rijndael (3 rounds, NOT standard AES) for key derivation
 - **Real display coordinates**: `DisplayInfo` from CoreGraphics replaces hardcoded `MAIN_DISPLAY_WIDTH = 2560`
 - **Single CI bookmark enforced**: `get_ci_bookmark_url()` raises `BookmarkError` if CI folder has != 1 bookmark
 - **Samsung vendor IDs**: EDID codes `0x4C2D` ("SAM") and `0x4CA3` ("SEC") in `SAMSUNG_VENDOR_IDS`. If a new Samsung TV reports a different code, step 1 prints all detected displays so the user can add the ID to `config.py`
