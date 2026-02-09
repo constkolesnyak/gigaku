@@ -15,8 +15,8 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 - `config.py` — all constants (paths, IDs, vendor codes, timing)
 - `applescript.py` — `Foundation.NSAppleScript` wrapper (`run()`, `run_int()`, `AppleScriptError`)
 - `display.py` — `CoreGraphics` display detection (`DisplayInfo` dataclass, `list_displays()`, `find_samsung_display()`)
-- `chrome.py` — bookmarks JSON reading, window open/close/fullscreen via AppleScript (`BookmarkError`)
-- `tv.py` — Samsung TV control: UPnP SOAP for direct input switching (`get_current_source()`, `set_source()`, `get_source_list()`), encrypted WebSocket as fallback (`switch_to_mac()`, `discover()`, `TVError`)
+- `chrome.py` — bookmarks JSON reading, window open/close/fullscreen/keystroke via AppleScript (`BookmarkError`)
+- `tv.py` — Samsung TV control: UPnP SOAP for direct input switching (`get_current_source()`, `set_source()`, `get_source_list()`), encrypted WebSocket as fallback (`switch_to_mac()`, `send_key()`, `discover()`, `TVError`)
 - `_rijndael.py` — reduced-round Rijndael (3 rounds) for Samsung SamyGO key derivation
 
 **`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
@@ -28,6 +28,7 @@ poetry run steps/step_5_fullscreen_migaku.py  # Individual step
 5. `step_5_fullscreen_migaku` — fullscreens Migaku window by ID
 6. `step_6_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
 7. `step_7_open_ci` — reads CI bookmark, opens in new Chrome window, and fullscreens it
+- `step_pause_media` — pauses media: `KEY_PAUSE` via TV remote if on HDMI1, spacebar to CI Chrome window. Called twice in main: before input switch and after CI opens
 
 **`main.py`** — orchestrator calling steps in order. No try/except — errors propagate with full tracebacks.
 

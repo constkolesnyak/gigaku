@@ -172,6 +172,22 @@ end tell'''
     applescript.run(source)
 
 
+def send_keystroke_to_window(window_id: int, key: str) -> None:
+    """Send a keystroke to a specific Chrome window by bringing it to front first."""
+    title = _get_window_title(window_id)
+    source = f'''\
+tell application "Google Chrome" to activate
+delay 0.5
+tell application "System Events"
+    tell process "Google Chrome"
+        click menu item "{title}" of menu "Window" of menu bar 1
+        delay 0.5
+        keystroke "{key}"
+    end tell
+end tell'''
+    applescript.run(source)
+
+
 def make_window_fullscreen(window_id: int) -> bool:
     """Make a specific Chrome window fullscreen by ID.
 

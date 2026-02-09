@@ -402,6 +402,13 @@ def set_source(name: str, source_id: int) -> None:
 
 # --- Public API ---
 
+def send_key(key: str) -> None:
+    """Send a single remote key press to the TV via encrypted WebSocket."""
+    if not TV_IP:
+        raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
+    _send_keys([key])
+
+
 def switch_to_mac() -> None:
     """Switch TV input to Mac's HDMI port. Uses SOAP, falls back to key sequence."""
     if not TV_IP:
