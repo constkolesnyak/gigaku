@@ -118,40 +118,79 @@ end tell'''
     return window_id
 
 
-def make_window_fullscreen(window_id: int) -> bool:
-    """Make a specific Chrome window fullscreen by ID.
-
-    Returns True if fullscreen was toggled, False if already fullscreen.
-    """
+def _get_window_title(window_id: int) -> str:
+    """Wait for a Chrome window to finish loading and return its title."""
     source = f'''\
-set windowTitle to ""
 tell application "Google Chrome"
-    -- Wait for the tab to finish loading (title stops saying "Loading")
     repeat 30 times
         repeat with w in windows
             if (id of w as text) = "{window_id}" then
                 set windowTitle to name of w
-                exit repeat
+                if windowTitle is not "" and windowTitle does not contain "Loading" then
+                    return windowTitle
+                end if
             end if
         end repeat
-        if windowTitle is not "" and windowTitle does not contain "Loading" then exit repeat
         delay 1
     end repeat
-    activate
-end tell
+    return ""
+end tell'''
+    result = applescript.run(source)
+    if not result:
+        raise RuntimeError(f"Chrome window {window_id} not found or didn't finish loading")
+    return result
 
-delay 0.5
 
+def _check_fullscreen(title: str) -> bool:
+    """Check if the Chrome window with the given title is fullscreen (fresh references)."""
+    source = f'''\
 tell application "System Events"
     tell process "Google Chrome"
-        click menu item windowTitle of menu "Window" of menu bar 1
-        delay 0.5
-        if value of attribute "AXFullScreen" of front window then
-            return "already"
-        end if
-        keystroke "f" using {{control down, command down}}
+        repeat with w in windows
+            if subrole of w is "AXStandardWindow" and title of w starts with "{title}" then
+                return value of attribute "AXFullScreen" of w
+            end if
+        end repeat
     end tell
 end tell
-return "toggled"'''
-    result = applescript.run(source)
-    return result == "toggled"
+return false'''
+    return applescript.run(source) == "true"
+
+
+def _bring_to_front_and_toggle(title: str) -> None:
+    """Bring a Chrome window to front via Window menu and send Ctrl+Cmd+F."""
+    source = f'''\
+tell application "Google Chrome" to activate
+delay 0.5
+tell application "System Events"
+    tell process "Google Chrome"
+        click menu item "{title}" of menu "Window" of menu bar 1
+        delay 0.5
+        keystroke "f" using {{control down, command down}}
+    end tell
+end tell'''
+    applescript.run(source)
+
+
+def make_window_fullscreen(window_id: int) -> bool:
+    """Make a specific Chrome window fullscreen by ID.
+
+    Verifies via AXFullScreen after toggling, retries up to 3 times.
+    Each check uses fresh System Events window references to avoid stale refs
+    after macOS moves the window to its own Space.
+    Returns True if fullscreen was toggled, False if already fullscreen.
+    """
+    import time
+
+    title = _get_window_title(window_id)
+
+    if _check_fullscreen(title):
+        return False
+
+    for _ in range(3):
+        _bring_to_front_and_toggle(title)
+        time.sleep(2)  # wait for macOS fullscreen animation
+        if _check_fullscreen(title):
+            return True
+
+    raise RuntimeError(f"Failed to fullscreen window {window_id} after 3 retries")

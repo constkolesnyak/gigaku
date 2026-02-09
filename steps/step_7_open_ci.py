@@ -2,7 +2,6 @@
 """Step 7: Open the CI bookmark in a new Chrome window on Samsung and fullscreen it."""
 
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -16,7 +15,6 @@ def run(samsung: DisplayInfo) -> int:
     url = get_ci_bookmark_url()
     window_id = open_url_in_new_window(url, samsung)
     print(f"Opened CI in Chrome window {window_id}")
-    time.sleep(1.5)  # macOS fullscreen animation
     make_window_fullscreen(window_id)
     print(f"CI window {window_id} set to fullscreen")
     return window_id
