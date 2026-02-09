@@ -3,8 +3,8 @@
 import time
 
 from steps import (
-    step_0_switch_input,
-    step_1_wait_samsung,
+    step_0_wait_samsung,
+    step_1_switch_input,
     step_2_focus_samsung,
     step_3_close_samsung_windows,
     step_4_open_migaku,
@@ -13,8 +13,8 @@ from steps import (
     step_7_open_ci,
 )
 
-samsung = step_1_wait_samsung.run()
-step_0_switch_input.run()
+samsung = step_0_wait_samsung.run()
+step_1_switch_input.run()
 time.sleep(3)  # wait for TV input switch + source menu to close
 step_2_focus_samsung.run(samsung)
 step_3_close_samsung_windows.run(samsung)

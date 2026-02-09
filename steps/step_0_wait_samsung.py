@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 1: Poll until Samsung TV display is connected."""
+"""Step 0: Poll until Samsung TV display is connected."""
 
 import sys
 import time
