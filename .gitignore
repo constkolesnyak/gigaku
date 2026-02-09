@@ -19,5 +19,8 @@ build/
 *.swp
 *.swo
 
+# Samsung TV token
+.tv_token
+
 # Claude Code
 .claude/
