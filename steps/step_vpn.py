@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step: Connect to a Japan VPN server via the NordVPN Chrome extension."""
+"""Step: Connect to or disconnect from VPN via the NordVPN Chrome extension."""
 
 import sys
 import time
@@ -138,8 +138,13 @@ def _connect_japan(timeout: int = 30) -> None:
     raise VPNError("Failed to connect to Japan within timeout")
 
 
-def run(samsung: DisplayInfo) -> None:
-    """Connect to Japan via NordVPN Chrome extension, fullscreen on Samsung."""
+def run(samsung: DisplayInfo, country: str | None = None) -> None:
+    """Connect to or disconnect from VPN via NordVPN Chrome extension.
+
+    Args:
+        samsung: Samsung display info for window placement.
+        country: Country to connect to (e.g. "Japan"), or None to disconnect.
+    """
     window_id = open_url_in_new_window(NORDVPN_POPUP_URL, samsung)
     print(f"Opened NordVPN in Chrome window {window_id}")
     make_window_fullscreen(window_id)
@@ -148,7 +153,19 @@ def run(samsung: DisplayInfo) -> None:
     _wait_for_ui()
 
     state = _get_connection_state()
-    if state and "Japan" in state:
+
+    if country is None:
+        # Disconnect mode
+        if state is None:
+            print("VPN already disconnected")
+        else:
+            print(f"Currently connected to {state}")
+            _disconnect()
+        _close_vpn_window(window_id)
+        return
+
+    # Connect mode
+    if state and country in state:
         print(f"Already connected to {state}")
         _close_vpn_window(window_id)
         return
@@ -166,4 +183,7 @@ if __name__ == "__main__":
     if samsung is None:
         print("Samsung display not found")
         raise SystemExit(1)
-    run(samsung)
+    if "--disconnect" in sys.argv:
+        run(samsung, country=None)
+    else:
+        run(samsung, country="Japan")

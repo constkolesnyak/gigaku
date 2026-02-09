@@ -125,36 +125,25 @@ end tell'''
     return window_id
 
 
-def _get_window_title(window_id: int) -> str:
-    """Wait for a Chrome window to finish loading and return its title."""
+def _check_fullscreen(window_id: int) -> bool:
+    """Check if the Chrome window with the given ID is fullscreen.
+
+    Brings the window to front via set index, then checks the frontmost
+    AXStandardWindow — avoids title matching entirely.
+    """
     source = f'''\
 tell application "Google Chrome"
-    repeat 30 times
-        repeat with w in windows
-            if (id of w as text) = "{window_id}" then
-                set windowTitle to name of w
-                if windowTitle is not "" and windowTitle does not contain "Loading" then
-                    return windowTitle
-                end if
-            end if
-        end repeat
-        delay 1
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set index of w to 1
+            exit repeat
+        end if
     end repeat
-    return ""
-end tell'''
-    result = applescript.run(source)
-    if not result:
-        raise RuntimeError(f"Chrome window {window_id} not found or didn't finish loading")
-    return result
-
-
-def _check_fullscreen(title: str) -> bool:
-    """Check if the Chrome window with the given title is fullscreen (fresh references)."""
-    source = f'''\
+end tell
 tell application "System Events"
     tell process "Google Chrome"
         repeat with w in windows
-            if subrole of w is "AXStandardWindow" and title of w starts with "{title}" then
+            if subrole of w is "AXStandardWindow" then
                 return value of attribute "AXFullScreen" of w
             end if
         end repeat
@@ -164,15 +153,24 @@ return false'''
     return applescript.run(source) == "true"
 
 
-def _bring_to_front_and_toggle(title: str) -> None:
-    """Bring a Chrome window to front via Window menu and send Ctrl+Cmd+F."""
+def _bring_to_front_and_toggle(window_id: int) -> None:
+    """Bring a Chrome window to front and send Ctrl+Cmd+F to toggle fullscreen.
+
+    Uses set index instead of Window menu click to avoid title race conditions.
+    """
     source = f'''\
-tell application "Google Chrome" to activate
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set index of w to 1
+            exit repeat
+        end if
+    end repeat
+    activate
+end tell
 delay 0.5
 tell application "System Events"
     tell process "Google Chrome"
-        click menu item "{title}" of menu "Window" of menu bar 1
-        delay 0.5
         keystroke "f" using {{control down, command down}}
     end tell
 end tell'''
@@ -181,14 +179,19 @@ end tell'''
 
 def send_keystroke_to_window(window_id: int, key: str) -> None:
     """Send a keystroke to a specific Chrome window by bringing it to front first."""
-    title = _get_window_title(window_id)
     source = f'''\
-tell application "Google Chrome" to activate
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set index of w to 1
+            exit repeat
+        end if
+    end repeat
+    activate
+end tell
 delay 0.5
 tell application "System Events"
     tell process "Google Chrome"
-        click menu item "{title}" of menu "Window" of menu bar 1
-        delay 0.5
         keystroke "{key}"
     end tell
 end tell'''
@@ -205,15 +208,13 @@ def make_window_fullscreen(window_id: int) -> bool:
     """
     import time
 
-    title = _get_window_title(window_id)
-
-    if _check_fullscreen(title):
+    if _check_fullscreen(window_id):
         return False
 
     for _ in range(3):
-        _bring_to_front_and_toggle(title)
+        _bring_to_front_and_toggle(window_id)
         time.sleep(2)  # wait for macOS fullscreen animation
-        if _check_fullscreen(title):
+        if _check_fullscreen(window_id):
             return True
 
     raise RuntimeError(f"Failed to fullscreen window {window_id} after 3 retries")
