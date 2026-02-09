@@ -2,7 +2,10 @@
 name = "gigaku"
 version = "0.1.0"
 description = "Migaku extension automation script"
-package-mode = false
+packages = [{include = "lib"}, {include = "steps"}, {include = "main.py"}]
+
+[tool.poetry.scripts]
+gigaku = "lib.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.14"
