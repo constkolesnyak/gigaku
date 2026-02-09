@@ -12,36 +12,43 @@ class BookmarkError(Exception):
     """Raised when CI bookmarks are missing or misconfigured."""
 
 
-def get_ci_bookmark_url() -> str:
+def get_ci_bookmark_url(subfolder: str) -> str:
     """Read the single CI bookmark URL from Chrome bookmarks.
 
-    Raises BookmarkError if the CI folder is missing, empty, or has != 1 bookmark.
+    Looks for CI_FOLDER_NAME -> subfolder -> exactly 1 bookmark.
+    Raises BookmarkError if any level is missing, empty, or has != 1 bookmark.
     """
     with open(CHROME_BOOKMARKS_PATH, encoding="utf-8") as f:
         bookmarks = json.load(f)
 
-    def find_ci_folder(node: dict) -> list[str] | None:
-        if node.get("type") == "folder" and node.get("name") == CI_FOLDER_NAME:
-            return [
-                child["url"]
-                for child in node.get("children", [])
-                if child.get("type") == "url"
-            ]
+    def find_folder(node: dict, name: str) -> dict | None:
+        if node.get("type") == "folder" and node.get("name") == name:
+            return node
         for child in node.get("children", []):
-            result = find_ci_folder(child)
+            result = find_folder(child, name)
             if result is not None:
                 return result
         return None
 
     for root_node in bookmarks.get("roots", {}).values():
         if isinstance(root_node, dict):
-            result = find_ci_folder(root_node)
-            if result is not None:
-                if len(result) != 1:
+            ci_folder = find_folder(root_node, CI_FOLDER_NAME)
+            if ci_folder is not None:
+                sub = find_folder(ci_folder, subfolder)
+                if sub is None:
                     raise BookmarkError(
-                        f"Expected exactly 1 bookmark in CI folder, found {len(result)}"
+                        f"Subfolder '{subfolder}' not found in '{CI_FOLDER_NAME}'"
                     )
-                return result[0]
+                urls = [
+                    child["url"]
+                    for child in sub.get("children", [])
+                    if child.get("type") == "url"
+                ]
+                if len(urls) != 1:
+                    raise BookmarkError(
+                        f"Expected exactly 1 bookmark in {CI_FOLDER_NAME}/{subfolder}, found {len(urls)}"
+                    )
+                return urls[0]
 
     raise BookmarkError(f"Bookmark folder '{CI_FOLDER_NAME}' not found")
 

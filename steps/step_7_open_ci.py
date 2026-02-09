@@ -10,9 +10,9 @@ from lib.chrome import get_ci_bookmark_url, make_window_fullscreen, open_url_in_
 from lib.display import DisplayInfo, find_samsung_display
 
 
-def run(samsung: DisplayInfo) -> int:
+def run(samsung: DisplayInfo, subfolder: str = "ger") -> int:
     """Open CI bookmark URL in a new Chrome window and fullscreen it. Returns window ID."""
-    url = get_ci_bookmark_url()
+    url = get_ci_bookmark_url(subfolder)
     window_id = open_url_in_new_window(url, samsung)
     print(f"Opened CI in Chrome window {window_id}")
     make_window_fullscreen(window_id)
@@ -25,4 +25,5 @@ if __name__ == "__main__":
     if samsung is None:
         print("Samsung display not found")
         raise SystemExit(1)
-    run(samsung)
+    sf = sys.argv[1] if len(sys.argv) > 1 else "ger"
+    run(samsung, subfolder=sf)

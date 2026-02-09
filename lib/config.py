@@ -17,7 +17,13 @@ MIGAKU_APP_URL = (
 )
 
 # Bookmarks
-CI_FOLDER_NAME = "CI"
+CI_FOLDER_NAME = "ci"
+
+# Language arg mapping: arg -> (Migaku language name, CI bookmark subfolder)
+LANG_MAP = {
+    "ger": ("German", "ger"),
+    "jap": ("Japanese", "jap"),
+}
 
 # Timing
 POLL_INTERVAL = 2  # seconds between Samsung display polls
