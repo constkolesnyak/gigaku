@@ -15,6 +15,7 @@ from steps import (
     step_6_switch_language,
     step_7_open_ci,
     step_pause_media,
+    step_vpn_japan,
 )
 
 # Parse language arg
@@ -34,6 +35,8 @@ step_1_switch_input.run()
 time.sleep(3)  # wait for TV input switch + source menu to close
 step_2_focus_samsung.run(samsung)
 step_3_close_samsung_windows.run(samsung)
+if sys.argv[1] == "jap":
+    step_vpn_japan.run(samsung)
 migaku_window_id = step_4_open_migaku.run(samsung)
 step_5_fullscreen_migaku.run(migaku_window_id)
 step_6_switch_language.run(language=language)

@@ -16,6 +16,10 @@ MIGAKU_APP_URL = (
     f"chrome-extension://{MIGAKU_EXTENSION_ID}/pages/app-window/index.html"
 )
 
+# NordVPN extension
+NORDVPN_EXTENSION_ID = "fjoaledfpmneenckfbpdfhkmimnjocfa"
+NORDVPN_POPUP_URL = f"chrome-extension://{NORDVPN_EXTENSION_ID}/index.html"
+
 # Bookmarks
 CI_FOLDER_NAME = "ci"
 
