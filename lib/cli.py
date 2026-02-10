@@ -15,6 +15,7 @@ from steps import (
     step_5_fullscreen_migaku,
     step_6_switch_language,
     step_7_open_ci,
+    step_8_pin_toolbar,
     step_pause_media,
     step_vpn,
 )
@@ -45,6 +46,7 @@ def main():
         step_6_switch_language.run(language=language)
         ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
         step_pause_media.run(ci_window_id=ci_window_id)
+        step_8_pin_toolbar.run(ci_window_id)
 
         print("\nSetup complete. Press Ctrl+C to clean up and exit.")
         while True:
