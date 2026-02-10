@@ -12,6 +12,37 @@ class BookmarkError(Exception):
     """Raised when CI bookmarks are missing or misconfigured."""
 
 
+def dismiss_profile_dialog() -> None:
+    """Dismiss all Chrome 'Something went wrong' profile error dialogs."""
+    source = '''\
+tell application "System Events"
+    if not (exists process "Google Chrome") then return "0"
+    set dismissed to 0
+    tell process "Google Chrome"
+        repeat
+            set found to false
+            repeat with w in windows
+                try
+                    click button "OK" of w
+                    set found to true
+                    set dismissed to dismissed + 1
+                    exit repeat
+                end try
+            end repeat
+            if not found then exit repeat
+            delay 0.3
+        end repeat
+    end tell
+    return dismissed as text
+end tell'''
+    try:
+        result = applescript.run(source)
+        if result is not None and result != "0":
+            print(f"  Dismissed {result} Chrome profile dialog(s)")
+    except AppleScriptError:
+        pass
+
+
 def get_ci_bookmark_url(subfolder: str) -> str:
     """Read the single CI bookmark URL from Chrome bookmarks.
 

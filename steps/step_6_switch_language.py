@@ -59,18 +59,30 @@ def run(language: str = "German") -> None:
             print(f"Opened language selector ({result})")
             time.sleep(2)
 
-        # Click the target language
-        result = _exec_js(
-            "var btns = document.querySelectorAll('button');"
-            " var result = 'not found';"
-            " for (var i = 0; i < btns.length; i++) {"
-            "   var p = btns[i].querySelector('p');"
-            f"  if (p && p.textContent === '{language}') {{"
-            "     btns[i].click(); result = 'clicked'; break;"
-            "   }"
-            " } result"
-        )
-        if result != "clicked":
+        # Click the target language, retry with Escape if not found
+        for attempt in range(3):
+            result = _exec_js(
+                "var btns = document.querySelectorAll('button');"
+                " var result = 'not found';"
+                " for (var i = 0; i < btns.length; i++) {"
+                "   var p = btns[i].querySelector('p');"
+                f"  if (p && p.textContent === '{language}') {{"
+                "     btns[i].click(); result = 'clicked'; break;"
+                "   }"
+                " } result"
+            )
+            if result == "clicked":
+                break
+            if attempt < 2:
+                print(f"  Language button not found, pressing Escape and retrying...")
+                applescript('''\
+tell application "System Events"
+    tell process "Google Chrome"
+        keystroke (ASCII character 27)
+    end tell
+end tell''')
+                time.sleep(2)
+        else:
             raise LanguageSwitchError(f"Language '{language}': {result}")
 
         time.sleep(5)
