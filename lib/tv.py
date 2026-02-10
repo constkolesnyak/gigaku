@@ -342,9 +342,11 @@ def _send_keys(keys, delay=0.7):
 _SOAP_URL = f"http://{TV_IP}:{TV_UPNP_PORT}{TV_UPNP_CONTROL_PATH}"
 _SOAP_NS = "urn:samsung.com:service:MainTVAgent2:1"
 
-
 def _soap_request(action: str, args: str = "") -> str:
-    """POST a SOAP envelope to MainTVAgent2. Returns the response body XML."""
+    """POST a SOAP envelope to MainTVAgent2. Returns the response body XML.
+
+    Retries once after a 2s pause on timeout or connection error.
+    """
     envelope = (
         '<?xml version="1.0" encoding="utf-8"?>'
         '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"'
@@ -360,9 +362,16 @@ def _soap_request(action: str, args: str = "") -> str:
         "Content-Type": 'text/xml; charset="utf-8"',
         "SOAPAction": f'"{_SOAP_NS}#{action}"',
     }
-    resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=5)
-    resp.raise_for_status()
-    return resp.text
+    try:
+        resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=3)
+        resp.raise_for_status()
+        return resp.text
+    except (requests.ConnectionError, requests.Timeout) as e:
+        print(f"SOAP {action} failed ({e}), retrying in 2s...")
+        time.sleep(2)
+        resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=5)
+        resp.raise_for_status()
+        return resp.text
 
 
 def get_current_source() -> str:
@@ -409,33 +418,29 @@ def send_key(key: str) -> None:
     _send_keys([key])
 
 
-def switch_to_mac() -> None:
-    """Switch TV input to Mac's HDMI port. Uses SOAP, falls back to key sequence."""
+def switch_to_hdmi1() -> None:
+    """Switch TV input back to HDMI1 via SOAP."""
     if not TV_IP:
         raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
 
-    # Try direct SOAP switching first
-    try:
-        current = get_current_source()
-        print(f"TV current input: {current}")
-        if current == TV_MAC_SOURCE:
-            print("Already on Mac input, skipping switch.")
-            return
-        print(f"Switching TV input to {TV_MAC_SOURCE} via SOAP...")
-        set_source(TV_MAC_SOURCE, TV_MAC_SOURCE_ID)
-        print(f"TV input switched to {TV_MAC_SOURCE}.")
-        return
-    except Exception as e:
-        print(f"SOAP switching failed ({e}), falling back to key sequence...")
+    print("Switching TV input to HDMI1 via SOAP...")
+    set_source("HDMI1", 57)
+    print("TV input switched to HDMI1.")
 
-    # Fallback: encrypted WebSocket key sequence
-    try:
-        _send_keys(["KEY_SOURCE"])
-        time.sleep(1)
-        _send_keys(["KEY_RIGHT", "KEY_ENTER"])
-    except Exception as e:
-        raise TVError(f"Failed to switch TV input: {e}") from e
-    print("TV input switched via key sequence.")
+
+def switch_to_mac() -> None:
+    """Switch TV input to Mac's HDMI port via SOAP."""
+    if not TV_IP:
+        raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
+
+    current = get_current_source()
+    print(f"TV current input: {current}")
+    if current == TV_MAC_SOURCE:
+        print("Already on Mac input, skipping switch.")
+        return
+    print(f"Switching TV input to {TV_MAC_SOURCE} via SOAP...")
+    set_source(TV_MAC_SOURCE, TV_MAC_SOURCE_ID)
+    print(f"TV input switched to {TV_MAC_SOURCE}.")
 
 
 def discover(timeout: float = 3.0) -> list[str]:

@@ -33,20 +33,20 @@ def main():
     get_ci_bookmark_url(subfolder)
 
     samsung = step_0_wait_samsung.run()
-    step_pause_media.run()
-    step_1_switch_input.run()
-    time.sleep(3)  # wait for TV input switch + source menu to close
-    step_2_focus_samsung.run(samsung)
-    step_3_close_samsung_windows.run(samsung)
-    step_vpn.run(samsung, country="Japan" if sys.argv[1] == "jap" else None)
-    migaku_window_id = step_4_open_migaku.run(samsung)
-    step_5_fullscreen_migaku.run(migaku_window_id)
-    step_6_switch_language.run(language=language)
-    ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
-    step_pause_media.run(ci_window_id=ci_window_id)
-
-    print("\nSetup complete. Press Ctrl+C to clean up and exit.")
     try:
+        step_pause_media.run()
+        step_1_switch_input.run()
+        time.sleep(3)  # wait for TV input switch + source menu to close
+        step_2_focus_samsung.run(samsung)
+        step_3_close_samsung_windows.run(samsung)
+        step_vpn.run(samsung, country="Japan" if sys.argv[1] == "jap" else None)
+        migaku_window_id = step_4_open_migaku.run(samsung)
+        step_5_fullscreen_migaku.run(migaku_window_id)
+        step_6_switch_language.run(language=language)
+        ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
+        step_pause_media.run(ci_window_id=ci_window_id)
+
+        print("\nSetup complete. Press Ctrl+C to clean up and exit.")
         while True:
             signal.pause()
     except KeyboardInterrupt:
@@ -63,8 +63,7 @@ def main():
             print(f"  Close windows failed: {e}")
 
         try:
-            from lib.tv import set_source
-            set_source("HDMI1", 57)
-            print("  TV switched to HDMI1.")
+            from lib.tv import switch_to_hdmi1
+            switch_to_hdmi1()
         except Exception as e:
             print(f"  TV switch failed: {e}")
