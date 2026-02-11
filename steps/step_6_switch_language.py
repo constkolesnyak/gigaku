@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.applescript import AppleScriptError, run as applescript
+from lib.chrome import dismiss_chrome_dialogs
 from lib.config import AVAILABLE_LANGUAGES, MIGAKU_EXTENSION_ID
 
 
@@ -74,13 +75,12 @@ def run(language: str = "German") -> None:
             if result == "clicked":
                 break
             if attempt < 2:
-                print(f"  Language button not found, pressing Escape and retrying...")
-                applescript('''\
-tell application "System Events"
-    tell process "Google Chrome"
-        keystroke (ASCII character 27)
-    end tell
-end tell''')
+                print(f"  Language button not found, dismissing dialogs and retrying...")
+                dismiss_chrome_dialogs()
+                # Dismiss proxy auth dialog by stopping page loads, then reload hash
+                _exec_js("window.stop()")
+                time.sleep(1)
+                _exec_js("window.location.hash = '#/language-select'")
                 time.sleep(2)
         else:
             raise LanguageSwitchError(f"Language '{language}': {result}")

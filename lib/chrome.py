@@ -12,13 +12,14 @@ class BookmarkError(Exception):
     """Raised when CI bookmarks are missing or misconfigured."""
 
 
-def dismiss_profile_dialog() -> None:
-    """Dismiss all Chrome 'Something went wrong' profile error dialogs."""
+def dismiss_chrome_dialogs() -> None:
+    """Dismiss Chrome dialogs: profile errors (OK), proxy auth (Cancel on sheets)."""
     source = '''\
 tell application "System Events"
     if not (exists process "Google Chrome") then return "0"
     set dismissed to 0
     tell process "Google Chrome"
+        -- Dismiss profile error dialogs (windows with OK button)
         repeat
             set found to false
             repeat with w in windows
@@ -38,7 +39,7 @@ end tell'''
     try:
         result = applescript.run(source)
         if result is not None and result != "0":
-            print(f"  Dismissed {result} Chrome profile dialog(s)")
+            print(f"  Dismissed {result} Chrome dialog(s)")
     except AppleScriptError:
         pass
 
