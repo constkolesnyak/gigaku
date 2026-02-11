@@ -22,7 +22,8 @@ from lib.display import DisplayInfo, find_samsung_display
 
 def run(samsung: DisplayInfo) -> None:
     """Move cursor to Samsung center and click to shift focus."""
-    x, y = samsung.center
+    x = samsung.x + samsung.width - 18
+    y = samsung.y + samsung.height * 0.29
 
     # Move cursor
     move = CGEventCreateMouseEvent(None, kCGEventMouseMoved, (x, y), 0)
