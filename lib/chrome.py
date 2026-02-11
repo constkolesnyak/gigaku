@@ -93,7 +93,8 @@ tell application "Google Chrome"
     repeat with i from wCount to 1 by -1
         set w to window i
         set b to bounds of w
-        if item 1 of b >= {samsung.x} then
+        set leftEdge to item 1 of b
+        if leftEdge >= {samsung.x} and leftEdge < {samsung.x + samsung.width} then
             close w
         end if
     end repeat
