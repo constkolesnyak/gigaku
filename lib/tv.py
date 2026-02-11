@@ -20,7 +20,7 @@ from xml.etree import ElementTree as ET
 
 from lib._rijndael import encrypt as _rijndael_encrypt
 from lib.config import (
-    TV_IP, TV_MAC_SOURCE, TV_MAC_SOURCE_ID, TV_TOKEN_PATH, TV_UPNP_CONTROL_PATH, TV_UPNP_PORT,
+    TV_IP, TV_MAC_SOURCE, TV_MAC_SOURCE_ID, TV_TOKEN_PATH, TV_UPNP_PORT,
 )
 
 # --- Crypto constants (from SmartCrypto) ---
@@ -339,13 +339,76 @@ def _send_keys(keys, delay=0.7):
 
 # --- UPnP SOAP (direct input switching) ---
 
-_SOAP_URL = f"http://{TV_IP}:{TV_UPNP_PORT}{TV_UPNP_CONTROL_PATH}"
 _SOAP_NS = "urn:samsung.com:service:MainTVAgent2:1"
+_soap_url: str | None = None  # lazily discovered
+
+
+def _discover_soap_url(timeout: float = 3.0) -> str:
+    """Discover MainTVAgent2 controlURL via SSDP + device description XML.
+
+    The TV reassigns /smp_N_ paths on reboot, so we can't hardcode them.
+    """
+    # SSDP M-SEARCH for MainTVAgent2
+    msg = (
+        "M-SEARCH * HTTP/1.1\r\n"
+        "HOST: 239.255.255.250:1900\r\n"
+        'MAN: "ssdp:discover"\r\n'
+        "MX: 3\r\n"
+        f"ST: {_SOAP_NS}\r\n\r\n"
+    )
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+    s.settimeout(timeout)
+    try:
+        s.sendto(msg.encode(), ("239.255.255.250", 1900))
+        location = None
+        while True:
+            data, addr = s.recvfrom(4096)
+            if addr[0] != TV_IP:
+                continue
+            for line in data.decode(errors="replace").split("\r\n"):
+                if line.upper().startswith("LOCATION:"):
+                    location = line.split(":", 1)[1].strip()
+                    break
+            if location:
+                break
+    except socket.timeout:
+        pass
+    finally:
+        s.close()
+
+    if not location:
+        raise TVError(f"SSDP discovery failed — MainTVAgent2 not found at {TV_IP}")
+
+    # Fetch device description XML and extract controlURL
+    resp = requests.get(location, timeout=5)
+    resp.raise_for_status()
+    root = ET.fromstring(resp.text)
+    ns = {"upnp": "urn:schemas-upnp-org:device-1-0"}
+    for svc in root.iter("{urn:schemas-upnp-org:device-1-0}service"):
+        stype = svc.findtext("{urn:schemas-upnp-org:device-1-0}serviceType", "")
+        if stype == _SOAP_NS:
+            ctrl = svc.findtext("{urn:schemas-upnp-org:device-1-0}controlURL", "")
+            if ctrl:
+                url = f"http://{TV_IP}:{TV_UPNP_PORT}{ctrl}"
+                print(f"Discovered SOAP control URL: {url}")
+                return url
+    raise TVError(f"controlURL for MainTVAgent2 not found in {location}")
+
+
+def _get_soap_url() -> str:
+    """Return cached SOAP URL, discovering on first call."""
+    global _soap_url
+    if _soap_url is None:
+        _soap_url = _discover_soap_url()
+    return _soap_url
+
 
 def _soap_request(action: str, args: str = "") -> str:
     """POST a SOAP envelope to MainTVAgent2. Returns the response body XML.
 
-    Retries once after a 2s pause on timeout or connection error.
+    Retries up to 3 times (2s between) on connection, timeout, or HTTP errors.
+    On persistent 400, re-discovers the control URL once in case paths changed.
     """
     envelope = (
         '<?xml version="1.0" encoding="utf-8"?>'
@@ -362,16 +425,29 @@ def _soap_request(action: str, args: str = "") -> str:
         "Content-Type": 'text/xml; charset="utf-8"',
         "SOAPAction": f'"{_SOAP_NS}#{action}"',
     }
-    try:
-        resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=3)
-        resp.raise_for_status()
-        return resp.text
-    except (requests.ConnectionError, requests.Timeout) as e:
-        print(f"SOAP {action} failed ({e}), retrying in 2s...")
-        time.sleep(2)
-        resp = requests.post(_SOAP_URL, data=envelope, headers=headers, timeout=5)
-        resp.raise_for_status()
-        return resp.text
+    global _soap_url
+    rediscovered = False
+    for attempt in range(3):
+        try:
+            url = _get_soap_url()
+            resp = requests.post(url, data=envelope, headers=headers, timeout=5)
+            resp.raise_for_status()
+            return resp.text
+        except requests.HTTPError as e:
+            if resp.status_code == 400 and not rediscovered:
+                print(f"SOAP {action} got 400, re-discovering control URL...")
+                _soap_url = None
+                rediscovered = True
+                continue
+            if attempt == 2:
+                raise
+            print(f"SOAP {action} failed ({e}), retrying in 2s...")
+            time.sleep(2)
+        except (requests.ConnectionError, requests.Timeout) as e:
+            if attempt == 2:
+                raise
+            print(f"SOAP {action} failed ({e}), retrying in 2s...")
+            time.sleep(2)
 
 
 def get_current_source() -> str:

@@ -38,7 +38,7 @@ uv run python steps/step_5_fullscreen_migaku.py  # Individual step
 ## Key Design Decisions
 
 - **No subprocess**: `osascript` replaced by `NSAppleScript` (`lib/applescript.py`), `system_profiler` replaced by `CoreGraphics` APIs (`lib/display.py`), TV control uses encrypted WebSocket via `pycryptodome` + `websocket-client` (`lib/tv.py`)
-- **Samsung TV input switching**: UPnP SOAP on port 7676 (`MainTVAgent2` service) for direct input detection and switching — no menu navigation needed. Falls back to encrypted WebSocket key sequence (`KEY_SOURCE → KEY_RIGHT → KEY_ENTER`) if SOAP is unavailable. SOAP uses IP-based ACL (one-time TV popup), independent of WebSocket pairing
+- **Samsung TV input switching**: UPnP SOAP on port 7676 (`MainTVAgent2` service) for direct input detection and switching — no menu navigation needed. Control URL discovered dynamically via SSDP (TV reassigns `/smp_N_` paths on reboot). Falls back to encrypted WebSocket key sequence (`KEY_SOURCE → KEY_RIGHT → KEY_ENTER`) if SOAP is unavailable. SOAP uses IP-based ACL (one-time TV popup), independent of WebSocket pairing
 - **Samsung TV encrypted protocol**: 2014 H-series uses encrypted Socket.IO on port 8000 with PIN-based pairing on port 8080. Requires reduced-round Rijndael (3 rounds, NOT standard AES) for key derivation
 - **Real display coordinates**: `DisplayInfo` from CoreGraphics replaces hardcoded `MAIN_DISPLAY_WIDTH = 2560`
 - **Single CI bookmark enforced**: `get_ci_bookmark_url()` raises `BookmarkError` if CI folder has != 1 bookmark
