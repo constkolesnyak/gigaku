@@ -5,9 +5,9 @@ macOS automation that sets up a Samsung TV display with Chrome windows for CI an
 ## Run
 
 ```bash
-gigaku jap                                    # Via pipx/poetry install
-poetry run python main.py jap                 # Via poetry run
-poetry run python steps/step_5_fullscreen_migaku.py  # Individual step
+gigaku jap                                    # Via uv tool install
+uv run python main.py jap                     # Via uv run
+uv run python steps/step_5_fullscreen_migaku.py  # Individual step
 ```
 
 ## Architecture
@@ -58,4 +58,4 @@ poetry run python steps/step_5_fullscreen_migaku.py  # Individual step
 - `requests` — HTTP requests for TV pairing
 - `websocket-client` — Socket.IO WebSocket connection to TV
 - Chrome "Allow JavaScript from Apple Events" must be enabled (View > Developer)
-- Python ^3.14, managed by Poetry
+- Python >=3.14, managed by uv
