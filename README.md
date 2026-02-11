@@ -11,7 +11,8 @@ macOS automation that sets up a Samsung TV as a second display with Chrome windo
 5. Opens the Migaku browser extension fullscreen on the TV
 6. Switches Migaku to the target language
 7. Opens a CI media bookmark fullscreen on the TV
-8. Pauses any playing media on the TV
+8. Pins the Migaku toolbar on the CI page
+9. Pauses any playing media on the TV
 
 On `Ctrl+C`, it disconnects the VPN, closes Chrome windows on the TV, and switches the TV input back to HDMI1.
 
@@ -19,7 +20,7 @@ On `Ctrl+C`, it disconnects the VPN, closes Chrome windows on the TV, and switch
 
 - macOS 15+ (Sequoia)
 - Python 3.14+
-- [Poetry](https://python-poetry.org/)
+- [uv](https://docs.astral.sh/uv/)
 - Google Chrome with "Allow JavaScript from Apple Events" enabled (Chrome > View > Developer)
 - Samsung 2014 H-series TV (tested on UE40H7000) connected as a display
 - Migaku and NordVPN Chrome extensions installed
@@ -27,13 +28,13 @@ On `Ctrl+C`, it disconnects the VPN, closes Chrome windows on the TV, and switch
 ## Install
 
 ```bash
-poetry install
+uv sync
 ```
 
-Or with [pipx](https://pipx.pypa.io/):
+Or as a global tool:
 
 ```bash
-pipx install .
+uv tool install git+https://github.com/constkolesnyak/gigaku.git
 ```
 
 ## Usage
@@ -52,8 +53,8 @@ gigaku ger   # German
 Individual steps can be run standalone for testing:
 
 ```bash
-poetry run python steps/step_1_switch_input.py
-poetry run python steps/step_5_fullscreen_migaku.py
+uv run python steps/step_1_switch_input.py
+uv run python steps/step_5_fullscreen_migaku.py
 ```
 
 ## Configuration
@@ -70,4 +71,4 @@ Edit `lib/config.py` to change:
 
 The TV must approve the Mac's IP for UPnP control (one-time popup on first connection). The encrypted WebSocket fallback requires a separate PIN-based pairing — the token is saved to `.tv_token`.
 
-Run `poetry run python steps/step_1_switch_input.py sources` to list available TV inputs and their IDs.
+Run `uv run python steps/step_1_switch_input.py sources` to list available TV inputs and their IDs.
