@@ -6,8 +6,26 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from lib import applescript
 from lib.chrome import get_ci_bookmark_url, make_window_fullscreen, open_url_in_new_window
 from lib.display import DisplayInfo, find_samsung_display
+
+
+def _maximize_on_samsung(window_id: int, samsung: DisplayInfo) -> None:
+    """Set Chrome window bounds to fill the Samsung display before fullscreening."""
+    x1 = samsung.x
+    y1 = samsung.y
+    x2 = samsung.x + samsung.width
+    y2 = samsung.y + samsung.height
+    applescript.run(f'''\
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set bounds of w to {{{x1}, {y1}, {x2}, {y2}}}
+            exit repeat
+        end if
+    end repeat
+end tell''')
 
 
 def run(samsung: DisplayInfo, subfolder: str = "ger") -> int:
@@ -15,6 +33,7 @@ def run(samsung: DisplayInfo, subfolder: str = "ger") -> int:
     url = get_ci_bookmark_url(subfolder)
     window_id = open_url_in_new_window(url, samsung)
     print(f"Opened CI in Chrome window {window_id}")
+    _maximize_on_samsung(window_id, samsung)
     make_window_fullscreen(window_id)
     print(f"CI window {window_id} set to fullscreen")
     return window_id
