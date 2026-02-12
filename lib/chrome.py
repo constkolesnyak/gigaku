@@ -86,19 +86,63 @@ def get_ci_bookmark_url(subfolder: str) -> str:
 
 
 def close_windows_on_display(samsung: DisplayInfo) -> None:
-    """Close Chrome windows whose left edge is on the Samsung display."""
+    """Close Chrome windows whose left edge is on the Samsung display.
+
+    Two-pass: collect window IDs, then for each exit fullscreen and close.
+    """
     source = f'''\
 tell application "Google Chrome"
+    set wIDs to {{}}
     set wCount to count of windows
     repeat with i from wCount to 1 by -1
         set w to window i
         set b to bounds of w
         set leftEdge to item 1 of b
         if leftEdge >= {samsung.x} and leftEdge < {samsung.x + samsung.width} then
-            close w
+            set end of wIDs to id of w
         end if
     end repeat
-end tell'''
+end tell
+
+repeat with i from 1 to count of wIDs
+    set theID to (item i of wIDs) as text
+
+    -- Bring window to front
+    tell application "Google Chrome"
+        repeat with w in windows
+            if (id of w as text) = theID then
+                set index of w to 1
+                exit repeat
+            end if
+        end repeat
+    end tell
+
+    -- Exit fullscreen if active
+    tell application "System Events"
+        tell process "Google Chrome"
+            repeat with w in windows
+                if subrole of w is "AXStandardWindow" then
+                    if value of attribute "AXFullScreen" of w then
+                        set value of attribute "AXFullScreen" of w to false
+                        delay 1
+                    end if
+                    exit repeat
+                end if
+            end repeat
+        end tell
+    end tell
+
+    -- Close window
+    tell application "Google Chrome"
+        repeat with w in windows
+            if (id of w as text) = theID then
+                close w
+                exit repeat
+            end if
+        end repeat
+    end tell
+    delay 0.3
+end repeat'''
     try:
         applescript.run(source)
     except AppleScriptError as e:
