@@ -4,7 +4,7 @@ import signal
 import sys
 import time
 
-from lib.chrome import dismiss_chrome_dialogs, get_ci_bookmark_url
+from lib.chrome import dismiss_chrome_dialogs, focus_window, get_ci_bookmark_url
 from lib.config import LANG_MAP
 from steps import (
     step_0_wait_samsung,
@@ -47,15 +47,17 @@ def main():
         dismiss_chrome_dialogs()
         step_vpn.run(samsung, country="Japan" if sys.argv[1] == "jap" else None)
         dismiss_chrome_dialogs()
-        migaku_window_id = step_4_open_migaku.run(samsung)
-        dismiss_chrome_dialogs()
-        step_5_fullscreen_migaku.run(migaku_window_id)
-        dismiss_chrome_dialogs()
-        step_6_switch_language.run(language=language)
-        dismiss_chrome_dialogs()
         ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
         dismiss_chrome_dialogs()
         step_pause_media.run(ci_window_id=ci_window_id)
+        dismiss_chrome_dialogs()
+        migaku_window_id = step_4_open_migaku.run(samsung)
+        dismiss_chrome_dialogs()
+        step_6_switch_language.run(language=language)
+        dismiss_chrome_dialogs()
+        step_5_fullscreen_migaku.run(migaku_window_id)
+        dismiss_chrome_dialogs()
+        focus_window(ci_window_id)
         dismiss_chrome_dialogs()
         step_8_pin_toolbar.run(ci_window_id)
 

@@ -275,6 +275,21 @@ end tell'''
     applescript.run(source)
 
 
+def focus_window(window_id: int) -> None:
+    """Bring a Chrome window to front by ID."""
+    source = f'''\
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            set index of w to 1
+            exit repeat
+        end if
+    end repeat
+    activate
+end tell'''
+    applescript.run(source)
+
+
 def make_window_fullscreen(window_id: int) -> bool:
     """Make a specific Chrome window fullscreen by ID.
 
