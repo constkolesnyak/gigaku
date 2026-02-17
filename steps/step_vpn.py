@@ -107,35 +107,35 @@ def _disconnect(timeout: int = 15) -> None:
     raise VPNError("Failed to disconnect within timeout")
 
 
-def _connect_japan(timeout: int = 30) -> None:
-    """Search for Japan and connect."""
+def _connect(country: str, timeout: int = 30) -> None:
+    """Search for a country and connect."""
     _exec_js(
         "var input = document.querySelector('[data-testid=\"location-card-search-input\"]');"
         " var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;"
-        " setter.call(input, 'Japan');"
+        f" setter.call(input, '{country}');"
         " input.dispatchEvent(new Event('input', {bubbles: true}));"
         " 'searched'"
     )
-    print("Searching for Japan...")
+    print(f"Searching for {country}...")
     time.sleep(1)
 
     result = _exec_js(
-        "var btn = document.querySelector('[role=\"button\"][aria-label=\"Japan\"]');"
+        f"var btn = document.querySelector('[role=\"button\"][aria-label=\"{country}\"]');"
         " if (btn) { btn.click(); 'clicked' } else { 'not found' }"
     )
     if result != "clicked":
-        raise VPNError("Japan not found in NordVPN country list")
+        raise VPNError(f"{country} not found in NordVPN country list")
 
-    print("Connecting to Japan...")
+    print(f"Connecting to {country}...")
 
     deadline = time.time() + timeout
     while time.time() < deadline:
         state = _get_connection_state()
-        if state and "Japan" in state:
+        if state and country in state:
             print(f"Connected to {state}")
             return
         time.sleep(2)
-    raise VPNError("Failed to connect to Japan within timeout")
+    raise VPNError(f"Failed to connect to {country} within timeout")
 
 
 def run(samsung: DisplayInfo, country: str | None = None) -> None:
@@ -174,7 +174,7 @@ def run(samsung: DisplayInfo, country: str | None = None) -> None:
         print(f"Currently connected to {state}")
         _disconnect()
 
-    _connect_japan()
+    _connect(country)
     _close_vpn_window(window_id)
 
 
@@ -186,4 +186,5 @@ if __name__ == "__main__":
     if "--disconnect" in sys.argv:
         run(samsung, country=None)
     else:
-        run(samsung, country="Japan")
+        country = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] != "--disconnect" else "Japan"
+        run(samsung, country=country)

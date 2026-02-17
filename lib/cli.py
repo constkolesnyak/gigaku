@@ -28,7 +28,7 @@ def main():
         print(f"Usage: gigaku <{valid}>")
         raise SystemExit(1)
 
-    language, subfolder = LANG_MAP[sys.argv[1]]
+    language, subfolder, vpn_country = LANG_MAP[sys.argv[1]]
 
     # Validate early — fail before any steps if CI bookmarks are misconfigured
     get_ci_bookmark_url(subfolder)
@@ -45,7 +45,7 @@ def main():
         dismiss_chrome_dialogs()
         step_3_close_samsung_windows.run(samsung)
         dismiss_chrome_dialogs()
-        step_vpn.run(samsung, country="Japan" if sys.argv[1] == "jap" else None)
+        step_vpn.run(samsung, country=vpn_country)
         dismiss_chrome_dialogs()
         ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
         dismiss_chrome_dialogs()
