@@ -45,7 +45,8 @@ def main():
         dismiss_chrome_dialogs()
         step_3_close_samsung_windows.run(samsung)
         dismiss_chrome_dialogs()
-        step_vpn.run(samsung, country=vpn_country)
+        if vpn_country is not None:
+            step_vpn.run(samsung, country=vpn_country)
         dismiss_chrome_dialogs()
         ci_window_id = step_7_open_ci.run(samsung, subfolder=subfolder)
         dismiss_chrome_dialogs()
@@ -67,10 +68,11 @@ def main():
     except KeyboardInterrupt:
         print("\nCleaning up...")
 
-        try:
-            step_vpn.run(samsung, country=None)
-        except Exception as e:
-            print(f"  VPN disconnect failed: {e}")
+        if vpn_country is not None:
+            try:
+                step_vpn.run(samsung, country=None)
+            except Exception as e:
+                print(f"  VPN disconnect failed: {e}")
 
         try:
             step_3_close_samsung_windows.run(samsung)

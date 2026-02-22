@@ -25,7 +25,7 @@ CI_FOLDER_NAME = "🎭 CI"
 
 # Language arg mapping: arg -> (Migaku language name, CI bookmark subfolder, VPN country)
 LANG_MAP = {
-    "ger": ("German", "ger", "Germany"),
+    "ger": ("German", "ger", None),
     "jap": ("Japanese", "jap", "Japan"),
 }
 
