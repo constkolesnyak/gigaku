@@ -16,6 +16,7 @@ from steps import (
     step_6_switch_language,
     step_7_open_ci,
     step_8_pin_toolbar,
+    step_dim_display,
     step_pause_media,
     step_vpn,
 )
@@ -40,6 +41,7 @@ def main():
         dismiss_chrome_dialogs()
         step_1_switch_input.run()
         time.sleep(3)  # wait for TV input switch + source menu to close
+        step_dim_display.run()
         dismiss_chrome_dialogs()
         step_2_focus_samsung.run(samsung)
         dismiss_chrome_dialogs()
