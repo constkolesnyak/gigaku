@@ -5,8 +5,8 @@ import sys
 import time
 
 from lib.chrome import dismiss_chrome_dialogs, focus_window, get_ci_bookmark_url
-from lib.config import LANG_MAP
-from lib.tv import switch_to_hdmi1
+from lib.config import LANG_MAP, POLL_INTERVAL, TV_MAC_SOURCE
+from lib.tv import get_current_source, switch_to_hdmi1
 from steps import (
     step_close_samsung_windows,
     step_dim_display,
@@ -46,7 +46,9 @@ def main():
     try:
         _step(step_pause_media.run)
         _step(step_switch_input.run)
-        time.sleep(3)  # wait for TV input switch + source menu to close
+        print("Waiting for TV input to switch...")
+        while get_current_source() != TV_MAC_SOURCE:
+            time.sleep(POLL_INTERVAL)
         _step(step_focus_samsung.run, samsung)
         _step(step_close_samsung_windows.run, samsung)
         _step(step_vpn.run, samsung, country=vpn_country)
