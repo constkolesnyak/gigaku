@@ -42,11 +42,11 @@ def main():
     get_ci_bookmark_url(subfolder)
 
     samsung = step_wait_samsung.run()
+    step_dim_display.run()  # no Chrome interaction, no dismiss needed
     try:
         _step(step_pause_media.run)
         _step(step_switch_input.run)
         time.sleep(3)  # wait for TV input switch + source menu to close
-        step_dim_display.run()  # no Chrome interaction, no dismiss needed
         _step(step_focus_samsung.run, samsung)
         _step(step_close_samsung_windows.run, samsung)
         _step(step_vpn.run, samsung, country=vpn_country)
