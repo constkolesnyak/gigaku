@@ -21,7 +21,7 @@ NORDVPN_EXTENSION_ID = "fjoaledfpmneenckfbpdfhkmimnjocfa"
 NORDVPN_POPUP_URL = f"chrome-extension://{NORDVPN_EXTENSION_ID}/index.html"
 
 # Bookmarks
-CI_FOLDER_NAME = "ci"
+CI_FOLDER_NAME = "🎭 CI"
 
 # Language arg mapping: arg -> (Migaku language name, CI bookmark subfolder, VPN country)
 LANG_MAP = {
