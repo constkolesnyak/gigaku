@@ -30,7 +30,7 @@ LANG_MAP = {
 }
 
 # Timing
-POLL_INTERVAL = 2  # seconds between Samsung display polls
+POLL_INTERVAL = 1  # seconds between Samsung display polls
 
 # Available Migaku languages
 AVAILABLE_LANGUAGES = [
