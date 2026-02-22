@@ -49,8 +49,7 @@ def main():
         step_dim_display.run()  # no Chrome interaction, no dismiss needed
         _step(step_focus_samsung.run, samsung)
         _step(step_close_samsung_windows.run, samsung)
-        if vpn_country is not None:
-            _step(step_vpn.run, samsung, country=vpn_country)
+        _step(step_vpn.run, samsung, country=vpn_country)
         ci_window_id = _step(step_open_ci.run, samsung, subfolder=subfolder)
         _step(step_pause_media.run, ci_window_id=ci_window_id)
         migaku_window_id = _step(step_open_migaku.run, samsung)
@@ -65,11 +64,10 @@ def main():
     except KeyboardInterrupt:
         print("\nCleaning up...")
 
-        if vpn_country is not None:
-            try:
-                step_vpn.run(samsung, country=None)
-            except Exception as e:
-                print(f"  VPN disconnect failed: {e}")
+        try:
+            step_vpn.run(samsung, country=None)
+        except Exception as e:
+            print(f"  VPN disconnect failed: {e}")
 
         try:
             step_close_samsung_windows.run(samsung)
