@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import applescript
-from lib.chrome import get_ci_bookmark_url, make_window_fullscreen, open_url_in_new_window
+from lib.chrome import get_ci_bookmark_url, open_url_in_new_window
 from lib.display import DisplayInfo, find_samsung_display
 
 
@@ -34,8 +34,6 @@ def run(samsung: DisplayInfo, subfolder: str = "ger") -> int:
     window_id = open_url_in_new_window(url, samsung)
     print(f"Opened CI in Chrome window {window_id}")
     _maximize_on_samsung(window_id, samsung)
-    make_window_fullscreen(window_id)
-    print(f"CI window {window_id} set to fullscreen")
     return window_id
 
 
