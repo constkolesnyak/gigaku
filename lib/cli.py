@@ -11,6 +11,7 @@ from steps import (
     step_close_samsung_windows,
     step_dim_display,
     step_focus_samsung,
+    step_fullscreen_ci_video,
     step_fullscreen_migaku,
     step_open_ci,
     step_open_migaku,
@@ -59,6 +60,7 @@ def main():
         _step(step_fullscreen_migaku.run, migaku_window_id)
         _step(focus_window, ci_window_id)
         _step(step_pin_toolbar.run, ci_window_id)
+        _step(step_fullscreen_ci_video.run, ci_window_id)
 
         print("\nSetup complete. Press Ctrl+C to clean up and exit.")
         while True:
