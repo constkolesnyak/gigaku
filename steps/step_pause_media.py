@@ -7,24 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from lib.chrome import exec_js_on_window
 from lib.config import TV_MAC_SOURCE
-
-
-def _exec_js(window_id: int, js: str) -> str | None:
-    """Execute JavaScript on the active tab of a Chrome window by ID."""
-    from lib.applescript import run as applescript
-
-    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
-    return applescript(f'''
-tell application "Google Chrome"
-    repeat with w in windows
-        if (id of w as text) = "{window_id}" then
-            return execute active tab of w javascript "{escaped}"
-        end if
-    end repeat
-    error "Chrome window {window_id} not found"
-end tell
-''')
 
 
 def run(ci_window_id: int | None = None) -> None:
@@ -52,7 +36,7 @@ def run(ci_window_id: int | None = None) -> None:
     if ci_window_id is not None:
         print(f"Waiting for media to load in CI window {ci_window_id}...")
         for attempt in range(30):
-            result = _exec_js(ci_window_id, (
+            result = exec_js_on_window(ci_window_id, (
                 "var m = document.querySelector('video') || document.querySelector('audio');"
                 " if (!m) {"
                 "   var frames = document.querySelectorAll('iframe');"

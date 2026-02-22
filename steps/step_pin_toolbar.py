@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 8: Pin the Migaku toolbar on the CI page."""
+"""Pin the Migaku toolbar on the CI page."""
 
 import sys
 import time
@@ -7,7 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.applescript import AppleScriptError, run as applescript
+from lib.applescript import AppleScriptError
+from lib.chrome import exec_js_on_window
 
 
 class PinToolbarError(Exception):
@@ -16,18 +17,8 @@ class PinToolbarError(Exception):
 
 def _exec_js(window_id: int, js: str) -> str | None:
     """Execute JavaScript on the active tab of a Chrome window by ID."""
-    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
     try:
-        return applescript(f'''
-tell application "Google Chrome"
-    repeat with w in windows
-        if (id of w as text) = "{window_id}" then
-            return execute active tab of w javascript "{escaped}"
-        end if
-    end repeat
-    error "Chrome window {window_id} not found"
-end tell
-''')
+        return exec_js_on_window(window_id, js)
     except AppleScriptError as e:
         if "JavaScript through AppleScript is turned off" in str(e):
             raise PinToolbarError(
@@ -70,6 +61,6 @@ def run(ci_window_id: int) -> None:
 if __name__ == "__main__":
     wid = int(sys.argv[1]) if len(sys.argv) > 1 else None
     if wid is None:
-        print("Usage: step_8_pin_toolbar.py <ci_window_id>")
+        print("Usage: step_pin_toolbar.py <ci_window_id>")
         raise SystemExit(1)
     run(wid)

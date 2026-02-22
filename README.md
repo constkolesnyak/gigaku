@@ -53,15 +53,15 @@ gigaku ger   # German
 Individual steps can be run standalone for testing:
 
 ```bash
-uv run python steps/step_1_switch_input.py
-uv run python steps/step_5_fullscreen_migaku.py
+uv run python steps/step_switch_input.py
+uv run python steps/step_fullscreen_migaku.py
 ```
 
 ## Configuration
 
 Edit `lib/config.py` to change:
 
-- `TV_IP` — Samsung TV IP address (run step 1 with `discover` to find via SSDP)
+- `TV_IP` — Samsung TV IP address (run step_switch_input with `discover` to find via SSDP)
 - `TV_MAC_SOURCE` / `TV_MAC_SOURCE_ID` — which HDMI input the Mac is on
 - `CHROME_PROFILE` — Chrome profile to read bookmarks from
 - `CI_FOLDER_NAME` — bookmarks folder name containing exactly one CI media bookmark
@@ -71,4 +71,4 @@ Edit `lib/config.py` to change:
 
 The TV must approve the Mac's IP for UPnP control (one-time popup on first connection). The encrypted WebSocket fallback requires a separate PIN-based pairing — the token is saved to `.tv_token`.
 
-Run `uv run python steps/step_1_switch_input.py sources` to list available TV inputs and their IDs.
+Run `uv run python steps/step_switch_input.py sources` to list available TV inputs and their IDs.

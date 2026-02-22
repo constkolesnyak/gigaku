@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 2: Move cursor to Samsung display center and click to focus."""
+"""Move cursor to Samsung display center and click to focus."""
 
 import sys
 import time

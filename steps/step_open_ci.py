@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 7: Open the CI bookmark in a new Chrome window on Samsung and fullscreen it."""
+"""Open the CI bookmark in a new Chrome window on Samsung and fullscreen it."""
 
 import sys
 from pathlib import Path

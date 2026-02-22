@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 3: Close any Chrome windows on the Samsung display."""
+"""Close any Chrome windows on the Samsung display."""
 
 import sys
 from pathlib import Path

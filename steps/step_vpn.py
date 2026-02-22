@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.applescript import AppleScriptError, run as applescript
-from lib.chrome import make_window_fullscreen, open_url_in_new_window
+from lib.chrome import exec_js_on_extension, make_window_fullscreen, open_url_in_new_window
 from lib.config import NORDVPN_EXTENSION_ID, NORDVPN_POPUP_URL
 from lib.display import DisplayInfo, find_samsung_display
 
@@ -19,20 +19,8 @@ class VPNError(Exception):
 
 def _exec_js(js: str) -> str | None:
     """Execute JavaScript on the NordVPN extension tab in Chrome."""
-    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
     try:
-        return applescript(f'''
-tell application "Google Chrome"
-    repeat with w in windows
-        repeat with t in tabs of w
-            if URL of t contains "{NORDVPN_EXTENSION_ID}" then
-                return execute t javascript "{escaped}"
-            end if
-        end repeat
-    end repeat
-    error "NordVPN extension tab not found in Chrome"
-end tell
-''')
+        return exec_js_on_extension(NORDVPN_EXTENSION_ID, js)
     except AppleScriptError as e:
         if "JavaScript through AppleScript is turned off" in str(e):
             raise VPNError(

@@ -1,6 +1,7 @@
 """Chrome bookmarks reading, window open/close/fullscreen."""
 
 import json
+import time
 
 from lib import applescript
 from lib.applescript import AppleScriptError
@@ -42,6 +43,38 @@ end tell'''
             print(f"  Dismissed {result} Chrome dialog(s)")
     except AppleScriptError:
         pass
+
+
+def exec_js_on_extension(extension_id: str, js: str) -> str | None:
+    """Execute JavaScript on a Chrome tab whose URL contains the given extension ID."""
+    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
+    return applescript.run(f'''
+tell application "Google Chrome"
+    repeat with w in windows
+        repeat with t in tabs of w
+            if URL of t contains "{extension_id}" then
+                return execute t javascript "{escaped}"
+            end if
+        end repeat
+    end repeat
+    error "Extension tab {extension_id} not found in Chrome"
+end tell
+''')
+
+
+def exec_js_on_window(window_id: int, js: str) -> str | None:
+    """Execute JavaScript on the active tab of a Chrome window by ID."""
+    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
+    return applescript.run(f'''
+tell application "Google Chrome"
+    repeat with w in windows
+        if (id of w as text) = "{window_id}" then
+            return execute active tab of w javascript "{escaped}"
+        end if
+    end repeat
+    error "Chrome window {window_id} not found"
+end tell
+''')
 
 
 def get_ci_bookmark_url(subfolder: str) -> str:
@@ -231,31 +264,16 @@ return false'''
 
 
 def _bring_to_front_and_toggle(window_id: int) -> None:
-    """Bring a Chrome window to front and send Ctrl+Cmd+F to toggle fullscreen.
-
-    Uses set index instead of Window menu click to avoid title race conditions.
-    """
-    source = f'''\
-tell application "Google Chrome"
-    repeat with w in windows
-        if (id of w as text) = "{window_id}" then
-            set index of w to 1
-            exit repeat
-        end if
-    end repeat
-    activate
-end tell
-delay 0.5
-tell application "System Events"
-    tell process "Google Chrome"
-        keystroke "f" using {{control down, command down}}
-    end tell
-end tell'''
-    applescript.run(source)
+    """Bring a Chrome window to front and send Ctrl+Cmd+F to toggle fullscreen."""
+    send_keystroke_to_window(window_id, "f", modifiers=["control down", "command down"])
 
 
-def send_keystroke_to_window(window_id: int, key: str) -> None:
+def send_keystroke_to_window(window_id: int, key: str, modifiers: list[str] | None = None) -> None:
     """Send a keystroke to a specific Chrome window by bringing it to front first."""
+    if modifiers:
+        ks = f'keystroke "{key}" using {{{", ".join(modifiers)}}}'
+    else:
+        ks = f'keystroke "{key}"'
     source = f'''\
 tell application "Google Chrome"
     repeat with w in windows
@@ -269,7 +287,7 @@ end tell
 delay 0.5
 tell application "System Events"
     tell process "Google Chrome"
-        keystroke "{key}"
+        {ks}
     end tell
 end tell'''
     applescript.run(source)
@@ -298,8 +316,6 @@ def make_window_fullscreen(window_id: int) -> bool:
     after macOS moves the window to its own Space.
     Returns True if fullscreen was toggled, False if already fullscreen.
     """
-    import time
-
     if _check_fullscreen(window_id):
         return False
 

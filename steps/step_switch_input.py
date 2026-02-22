@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 1: Switch Samsung TV input to Mac via UPnP SOAP (fallback: WebSocket)."""
+"""Switch Samsung TV input to Mac via UPnP SOAP (fallback: WebSocket)."""
 
 import sys
 from pathlib import Path

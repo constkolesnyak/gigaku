@@ -59,6 +59,14 @@ class TVError(Exception):
 
 # --- Crypto helpers ---
 
+def _sha1(*parts: bytes) -> bytes:
+    """Compute SHA-1 digest over concatenated parts."""
+    h = hashlib.sha1()
+    for p in parts:
+        h.update(p)
+    return h.digest()
+
+
 def _bytes2str(data):
     return data.decode("utf-8") if isinstance(data, bytes) else data
 
@@ -81,17 +89,13 @@ def _samy_go_transform(data):
 
 
 def _generate_server_hello(user_id, pin):
-    sha1 = hashlib.sha1()
-    sha1.update(pin.encode("utf-8"))
-    aes_key = sha1.digest()[:16]
+    aes_key = _sha1(pin.encode("utf-8"))[:16]
     iv = b"\x00" * _BLOCK_SIZE
     cipher = AES.new(aes_key, AES.MODE_CBC, iv)
     encrypted = cipher.encrypt(binascii.unhexlify(_PUBLIC_KEY))
     swapped = _encrypt_param(encrypted)
     data = struct.pack(">I", len(user_id)) + user_id.encode("utf-8") + swapped
-    sha1 = hashlib.sha1()
-    sha1.update(data)
-    data_hash = sha1.digest()
+    data_hash = _sha1(data)
     server_hello = (
         b"\x01\x02"
         + b"\x00" * 5
@@ -124,9 +128,7 @@ def _parse_client_hello(client_hello_hex, data_hash, aes_key, user_id):
 
     start = 15 + user_id_len + GX_SIZE
     hash2 = data[start : start + _SHA_DIGEST_LENGTH]
-    sha1 = hashlib.sha1()
-    sha1.update(client_user_id + secret)
-    hash3 = sha1.digest()
+    hash3 = _sha1(client_user_id + secret)
     if hash2 != hash3:
         return None  # wrong PIN
 
@@ -143,20 +145,13 @@ def _parse_client_hello(client_hello_hex, data_hash, aes_key, user_id):
         + binascii.unhexlify(_PUBLIC_KEY)
         + secret
     )
-    sha1 = hashlib.sha1()
-    sha1.update(final)
-    sk_prime = sha1.digest()
-
-    sha1 = hashlib.sha1()
-    sha1.update(sk_prime + b"\x00")
-    ctx = _samy_go_transform(sha1.digest()[:16])
+    sk_prime = _sha1(final)
+    ctx = _samy_go_transform(_sha1(sk_prime + b"\x00")[:16])
     return {"ctx": ctx, "SKPrime": sk_prime}
 
 
 def _generate_server_ack(sk_prime):
-    sha1 = hashlib.sha1()
-    sha1.update(sk_prime + b"\x01")
-    h = sha1.digest()
+    h = _sha1(sk_prime + b"\x01")
     return (
         "0103000000000000000014"
         + _bytes2str(binascii.hexlify(h)).upper()
@@ -165,9 +160,7 @@ def _generate_server_ack(sk_prime):
 
 
 def _parse_client_ack(client_ack, sk_prime):
-    sha1 = hashlib.sha1()
-    sha1.update(sk_prime + b"\x02")
-    h = sha1.digest()
+    h = _sha1(sk_prime + b"\x02")
     expected = (
         "0104000000000000000014"
         + _bytes2str(binascii.hexlify(h)).upper()
@@ -433,17 +426,12 @@ def _soap_request(action: str, args: str = "") -> str:
             resp = requests.post(url, data=envelope, headers=headers, timeout=5)
             resp.raise_for_status()
             return resp.text
-        except requests.HTTPError as e:
-            if resp.status_code == 400 and not rediscovered:
+        except (requests.HTTPError, requests.ConnectionError, requests.Timeout) as e:
+            if isinstance(e, requests.HTTPError) and resp.status_code == 400 and not rediscovered:
                 print(f"SOAP {action} got 400, re-discovering control URL...")
                 _soap_url = None
                 rediscovered = True
                 continue
-            if attempt == 2:
-                raise
-            print(f"SOAP {action} failed ({e}), retrying in 2s...")
-            time.sleep(2)
-        except (requests.ConnectionError, requests.Timeout) as e:
             if attempt == 2:
                 raise
             print(f"SOAP {action} failed ({e}), retrying in 2s...")
@@ -490,14 +478,14 @@ def set_source(name: str, source_id: int) -> None:
 def send_key(key: str) -> None:
     """Send a single remote key press to the TV via encrypted WebSocket."""
     if not TV_IP:
-        raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
+        raise TVError("TV_IP not set in lib/config.py — run step_wait_samsung with 'discover' to find it")
     _send_keys([key])
 
 
 def switch_to_hdmi1() -> None:
     """Switch TV input back to HDMI1 via SOAP."""
     if not TV_IP:
-        raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
+        raise TVError("TV_IP not set in lib/config.py — run step_wait_samsung with 'discover' to find it")
 
     print("Switching TV input to HDMI1 via SOAP...")
     set_source("HDMI1", 57)
@@ -507,7 +495,7 @@ def switch_to_hdmi1() -> None:
 def switch_to_mac() -> None:
     """Switch TV input to Mac's HDMI port via SOAP."""
     if not TV_IP:
-        raise TVError("TV_IP not set in lib/config.py — run step_0 with 'discover' to find it")
+        raise TVError("TV_IP not set in lib/config.py — run step_wait_samsung with 'discover' to find it")
 
     current = get_current_source()
     print(f"TV current input: {current}")

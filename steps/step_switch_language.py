@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 6: Switch Migaku extension language via AppleScript JS execution."""
+"""Switch Migaku extension language via AppleScript JS execution."""
 
 import sys
 import time
@@ -7,8 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.applescript import AppleScriptError, run as applescript
-from lib.chrome import dismiss_chrome_dialogs
+from lib.applescript import AppleScriptError
+from lib.chrome import dismiss_chrome_dialogs, exec_js_on_extension
 from lib.config import AVAILABLE_LANGUAGES, MIGAKU_EXTENSION_ID
 
 
@@ -18,21 +18,8 @@ class LanguageSwitchError(Exception):
 
 def _exec_js(js: str) -> str | None:
     """Execute JavaScript on the Migaku extension tab in Chrome."""
-    # Escape backslashes and double quotes for AppleScript string embedding
-    escaped = js.replace("\\", "\\\\").replace('"', '\\"')
     try:
-        return applescript(f'''
-tell application "Google Chrome"
-    repeat with w in windows
-        repeat with t in tabs of w
-            if URL of t contains "{MIGAKU_EXTENSION_ID}" then
-                return execute t javascript "{escaped}"
-            end if
-        end repeat
-    end repeat
-    error "Migaku extension tab not found in Chrome"
-end tell
-''')
+        return exec_js_on_extension(MIGAKU_EXTENSION_ID, js)
     except AppleScriptError as e:
         if "JavaScript through AppleScript is turned off" in str(e):
             raise LanguageSwitchError(

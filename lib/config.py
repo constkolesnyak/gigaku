@@ -39,7 +39,7 @@ AVAILABLE_LANGUAGES = [
 ]
 
 # Samsung TV remote control (encrypted WebSocket, 2014 H-series)
-TV_IP = "192.168.0.77"  # Samsung TV IP — run step_0 with 'discover' to find
+TV_IP = "192.168.0.77"  # Samsung TV IP — run step_wait_samsung with 'discover' to find
 TV_TOKEN_PATH = os.path.join(os.path.dirname(__file__), "..", ".tv_token")
 
 # Samsung TV UPnP SOAP (direct input switching, no menu navigation)

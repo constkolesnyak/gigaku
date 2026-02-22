@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 4: Open Migaku extension in a new Chrome window on Samsung."""
+"""Open Migaku extension in a new Chrome window on Samsung."""
 
 import sys
 from pathlib import Path
