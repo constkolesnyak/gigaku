@@ -5,14 +5,16 @@ macOS automation that sets up a Samsung TV as a second display with Chrome windo
 ## What it does
 
 1. Waits for the Samsung TV to appear as a connected display
-2. Switches the TV input to the Mac via UPnP SOAP (or encrypted WebSocket fallback)
-3. Closes any existing Chrome windows on the TV display
-4. Connects to a VPN if needed (Japan for Japanese)
-5. Opens the Migaku browser extension fullscreen on the TV
-6. Switches Migaku to the target language
-7. Opens a CI media bookmark fullscreen on the TV
-8. Pins the Migaku toolbar on the CI page
-9. Pauses any playing media on the TV
+2. Dims the built-in display
+3. Pauses any playing media on the TV
+4. Switches the TV input to the Mac via UPnP SOAP (or encrypted WebSocket fallback)
+5. Closes any existing Chrome windows on the TV display
+6. Connects to a VPN if needed (Japan for Japanese)
+7. Opens a CI media bookmark fullscreen on the TV and pauses it
+8. Opens the Migaku browser extension on the TV
+9. Switches Migaku to the target language and fullscreens it
+10. Pins the Migaku toolbar on the CI page
+11. Fullscreens the CI video player (Netflix)
 
 On `Ctrl+C`, it disconnects the VPN, closes Chrome windows on the TV, and switches the TV input back to HDMI1.
 

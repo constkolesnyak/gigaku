@@ -13,25 +13,30 @@ uv run python steps/step_fullscreen_migaku.py  # Individual step
 ## Architecture
 
 **`lib/`** — shared modules:
-- `cli.py` — CLI entry point (`main()`): parses language arg, runs steps in order, Ctrl+C cleanup (VPN disconnect, close windows, switch TV back to HDMI1)
+- `cli.py` — CLI entry point (`main()`): parses language arg, runs steps in order via `_step()` wrapper (dismisses Chrome dialogs before each step), Ctrl+C cleanup (VPN disconnect, close windows, switch TV back to HDMI1)
 - `config.py` — all constants (paths, IDs, vendor codes, timing, `LANG_MAP`)
 - `applescript.py` — `Foundation.NSAppleScript` wrapper (`run()`, `run_int()`, `AppleScriptError`)
 - `display.py` — `CoreGraphics` display detection (`DisplayInfo` dataclass, `list_displays()`, `find_samsung_display()`)
-- `chrome.py` — bookmarks JSON reading, window open/close/fullscreen/keystroke via AppleScript (`BookmarkError`)
+- `chrome.py` — bookmarks JSON reading, window open/close/fullscreen/keystroke via AppleScript, `dismiss_chrome_dialogs()`, `exec_js_on_extension()`, `exec_js_on_window()`, `focus_window()` (`BookmarkError`)
 - `tv.py` — Samsung TV control: UPnP SOAP for direct input switching (`get_current_source()`, `set_source()`, `get_source_list()`), encrypted WebSocket as fallback (`switch_to_mac()`, `send_key()`, `discover()`, `TVError`)
 - `_rijndael.py` — reduced-round Rijndael (3 rounds) for Samsung SamyGO key derivation
 
 **`steps/`** — each step has a `run()` function and `if __name__ == "__main__":` for standalone testing:
 - `step_wait_samsung` — polls `find_samsung_display()` every 2s, returns `DisplayInfo`
+- `step_dim_display` — sets built-in display brightness to 0 via `DisplayServices` private framework
 - `step_switch_input` — switches TV input to Mac via UPnP SOAP, falls back to encrypted WebSocket (`discover` arg for SSDP, `sources` arg to list available inputs)
 - `step_focus_samsung` — moves cursor to `samsung.center` + clicks via `CGEvent`
 - `step_close_samsung_windows` — closes Chrome windows on Samsung (ignores Chrome-not-running)
-- `step_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
-- `step_fullscreen_migaku` — fullscreens Migaku window by ID
-- `step_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
-- `step_open_ci` — reads CI bookmark, opens in new Chrome window, and fullscreens it
 - `step_vpn` — connects/disconnects NordVPN via Chrome extension (Japan VPN for `jap`, disconnect on cleanup)
-- `step_pause_media` — pauses media: `KEY_PAUSE` via TV remote if on HDMI1, spacebar to CI Chrome window. Called twice in main: before input switch and after CI opens
+- `step_open_ci` — reads CI bookmark, opens in new Chrome window, and fullscreens it. Returns window ID
+- `step_pause_media` — pauses media: `KEY_PAUSE` via TV remote if on HDMI1, spacebar to CI Chrome window. Called twice: before input switch and after CI opens
+- `step_open_migaku` — opens Migaku extension URL in new Chrome window, returns window ID
+- `step_switch_language` — AppleScript `execute javascript` on existing Migaku tab in Chrome
+- `step_fullscreen_migaku` — fullscreens Migaku window by ID
+- `step_pin_toolbar` — polls for the Migaku shadow DOM on CI tab and clicks "Pin toolbar" button
+- `step_fullscreen_ci_video` — sends `f` keystroke to fullscreen Netflix video player (skips if not Netflix)
+- `step_refresh_migaku` — reloads Migaku extension tab and waits for `readyState == "complete"` (standalone utility, not in main flow)
+- `test_open_samsung.py` — test helper: opens Migaku + CI on Samsung, fullscreens both, pauses CI media
 
 **`main.py`** — thin wrapper delegating to `lib.cli:main`.
 
