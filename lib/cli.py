@@ -8,8 +8,10 @@ from lib.chrome import dismiss_chrome_dialogs, focus_window, get_ci_bookmark_url
 from lib.config import LANG_MAP, POLL_INTERVAL, TV_MAC_SOURCE
 from lib.tv import get_current_source, switch_to_hdmi1
 from steps import (
+    step_close_netflix_tabs,
     step_close_samsung_windows,
     step_dim_display,
+    step_enable_bluetooth,
     step_focus_samsung,
     step_fullscreen_ci_video,
     step_fullscreen_migaku,
@@ -44,7 +46,9 @@ def main():
 
     samsung = step_wait_samsung.run()
     step_dim_display.run()  # no Chrome interaction, no dismiss needed
+    step_enable_bluetooth.run()  # no Chrome interaction, no dismiss needed
     try:
+        _step(step_close_netflix_tabs.run)
         _step(step_pause_media.run)
         _step(step_switch_input.run)
         print("Waiting for TV input to switch...")
