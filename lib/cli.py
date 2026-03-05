@@ -4,7 +4,13 @@ import signal
 import sys
 import time
 
-from lib.chrome import dismiss_chrome_dialogs, focus_window, get_ci_bookmark_url
+from lib.chrome import (
+    BookmarkError,
+    dismiss_chrome_dialogs,
+    focus_window,
+    get_ci_bookmark_url,
+    validate_ci_bookmarks,
+)
 from lib.config import LANG_MAP, POLL_INTERVAL, TV_MAC_SOURCE
 from lib.tv import get_current_source, switch_to_hdmi1
 from steps import (
@@ -42,7 +48,12 @@ def main():
     language, subfolder, vpn_country = LANG_MAP[sys.argv[1]]
 
     # Validate early — fail before any steps if CI bookmarks are misconfigured
-    get_ci_bookmark_url(subfolder)
+    try:
+        validate_ci_bookmarks()
+        get_ci_bookmark_url(subfolder)
+    except BookmarkError as e:
+        print(f"Bookmark error: {e}")
+        raise SystemExit(1)
 
     samsung = step_wait_samsung.run()
     step_dim_display.run()  # no Chrome interaction, no dismiss needed
